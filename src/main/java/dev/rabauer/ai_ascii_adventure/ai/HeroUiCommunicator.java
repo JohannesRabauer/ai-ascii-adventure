@@ -1,7 +1,8 @@
-package dev.rabauer.ai_ascii_adventure;
+package dev.rabauer.ai_ascii_adventure.ai;
 
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.progressbar.ProgressBar;
+import dev.rabauer.ai_ascii_adventure.GameManager;
 import dev.rabauer.ai_ascii_adventure.dto.Hero;
 import org.springframework.ai.tool.annotation.Tool;
 
