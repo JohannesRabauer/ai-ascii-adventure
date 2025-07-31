@@ -24,7 +24,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
 
-import static dev.rabauer.ai_ascii_adventure.ai.AiService.CREATE_ASCII_ART_PROMPT_PROMPT;
+import static dev.rabauer.ai_ascii_adventure.ai.AiService.CREATE_ASCII_ART_PROMPT;
+import static dev.rabauer.ai_ascii_adventure.ai.AiService.EXTRACT_IMAGE_TITLE_PROMPT;
 import static dev.rabauer.ai_ascii_adventure.dto.Game.INITIAL_PROMPT;
 
 @Route(value = "", layout = MainLayout.class)
@@ -141,16 +142,20 @@ public class ChatView extends SplitLayout implements GameManager {
         this.txtStory.clear();
 
         UI current = UI.getCurrent();
+        StringBuilder completeText = new StringBuilder();
         aiService.generateNewStoryPart(
                 this.chatClient,
                 textPrompt,
                 heroCommunicator,
                 response ->
                         current.access(
-                                () ->
-                                        txtStory.setValue(txtStory.getValue() + response.chatResponse().getResult().getOutput().getText())
+                                () -> {
+                                    String newText = response.chatResponse().getResult().getOutput().getText();
+                                    completeText.append(newText);
+                                    txtStory.setValue(txtStory.getValue() + newText);
+                                }
                         ),
-                () -> current.access(() -> handleFinishedStoryPart(txtStory.getValue()))
+                () -> current.access(() -> handleFinishedStoryPart(completeText.toString()))
         );
 
     }
@@ -159,11 +164,20 @@ public class ChatView extends SplitLayout implements GameManager {
         StoryPart storyPart = new StoryPart(storyPartAsString);
         this.game.story().storyParts().add(storyPart);
 
+        txtAsciiArt.clear();
+
         UI current = UI.getCurrent();
         aiService.generateAsciiArt(
                 aiService.createChatClient(false),
-                CREATE_ASCII_ART_PROMPT_PROMPT.formatted(storyPartAsString),
-                response -> current.access(() -> txtAsciiArt.setValue(response))
+                EXTRACT_IMAGE_TITLE_PROMPT.formatted(storyPartAsString),
+                responseWithTitle -> {
+                    current.access(() -> txtAsciiArt.setTitle(responseWithTitle));
+                    aiService.generateAsciiArt(
+                            aiService.createChatClient(false),
+                            CREATE_ASCII_ART_PROMPT.formatted(responseWithTitle),
+                            response -> current.access(() -> txtAsciiArt.setValue(response))
+                    );
+                }
         );
     }
 }

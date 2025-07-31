@@ -27,13 +27,21 @@ public class AiService {
             Text:
             %s
             """;
-    public final static String CREATE_ASCII_ART_PROMPT_PROMPT = """
-                Read the following text, extract its core meaning, and create a simple, beautiful, and recognizable ASCII art representation of it. Use minimal characters and clean lines.
+    public final static String EXTRACT_IMAGE_TITLE_PROMPT = """
+                Read the following text, extract its core meaning, and create a simple two word
+                title for an image that you would draw for this text
                 
-                Important: Return only the ASCII art — no explanation, no commentary, no labels. The output must consist of ASCII characters only.
-                
+                Output: Only the two words for the title of an image. 
+
                 Text:
                 %s
+            """;
+    public final static String CREATE_ASCII_ART_PROMPT = """
+                Input: You are given two words for a title of an image
+                Output: Simple and recognizable ASCII art representation. Use minimal characters and clean lines. 
+                IMPORTANT: Only return the ASCII art. Now other text or description!                
+                Task: Create a simple and recognizable ASCII art representation for the following title of the image
+                Title of the image: %s
             """;
     private final ChatModel chatModel;
 
