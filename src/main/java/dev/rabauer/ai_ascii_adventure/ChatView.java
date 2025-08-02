@@ -12,6 +12,7 @@ import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.Route;
 import dev.rabauer.ai_ascii_adventure.ai.AiService;
 import dev.rabauer.ai_ascii_adventure.ai.HeroUiCommunicator;
@@ -128,12 +129,27 @@ public class ChatView extends SplitLayout implements GameManager {
         txtStory.setTitle("Story");
         txtStory.setSizeFull();
 
-        TextField txtChat = new TextField();
-        txtChat.setTitle("Prompt");
-        txtChat.addKeyDownListener(Key.ENTER, event -> generateNewStoryPart(txtChat.getValue()));
+        com.vaadin.flow.component.textfield.NumberField numInput = new com.vaadin.flow.component.textfield.NumberField();
+        numInput.setTitle("Prompt");
+        numInput.setValueChangeMode(ValueChangeMode.EAGER);
+        numInput.setMin(1);
+        numInput.setMax(4);
+        numInput.setStep(1);
+        numInput.setWidth("100px");
+        numInput.addKeyDownListener(Key.ENTER, event -> {
+            Double value = numInput.getValue();
+            if (value != null && value >= 1 && value <= 4) {
+                generateNewStoryPart(String.valueOf(value.intValue()));
+            }
+        });
         Button btnSendPrompt = new Button("Send");
-        btnSendPrompt.addClickListener(k -> generateNewStoryPart(txtChat.getValue()));
-        HorizontalLayout hlUserInput = new HorizontalLayout(txtChat, btnSendPrompt);
+        btnSendPrompt.addClickListener(k -> {
+            Double value = numInput.getValue();
+            if (value != null && value >= 1 && value <= 4) {
+                generateNewStoryPart(String.valueOf(value.intValue()));
+            }
+        });
+        HorizontalLayout hlUserInput = new HorizontalLayout(numInput, btnSendPrompt);
 
         return new VerticalLayout(txtStory, hlUserInput);
     }
