@@ -7,6 +7,8 @@ services:
     volumes:
       - ./ollama_data:/root/.ollama
       - ./init:/init
+    environment:
+      - OLLAMA_KEEP_ALIVE=-1
     deploy:
       resources:
         reservations:
