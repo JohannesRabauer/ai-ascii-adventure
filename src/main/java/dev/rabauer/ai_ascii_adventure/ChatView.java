@@ -14,13 +14,14 @@ import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.Route;
+import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.rabauer.ai_ascii_adventure.ai.AiService;
+import dev.rabauer.ai_ascii_adventure.ai.Assistant;
 import dev.rabauer.ai_ascii_adventure.ai.HeroUiCommunicator;
 import dev.rabauer.ai_ascii_adventure.dto.Game;
 import dev.rabauer.ai_ascii_adventure.dto.Hero;
 import dev.rabauer.ai_ascii_adventure.dto.Story;
 import dev.rabauer.ai_ascii_adventure.dto.StoryPart;
-import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
@@ -36,7 +37,7 @@ public class ChatView extends SplitLayout implements GameManager {
     private final TextArea txtStory = new TextArea();
     private final TextArea txtAsciiArt = new TextArea();
 
-    private final ChatClient chatClient;
+    private final Assistant chatModel;
     private final AiService aiService;
     private ProgressBar prbHealth;
     private ProgressBar prbMana;
@@ -47,7 +48,7 @@ public class ChatView extends SplitLayout implements GameManager {
     @Autowired
     public ChatView(AiService aiService) {
         this.aiService = aiService;
-        this.chatClient = aiService.createChatClient(true);
+        this.chatModel = aiService.createChatModel(true); // LangChain4J model creation
 
         this.setSizeFull();
         this.addToPrimary(createAsciiArt());
@@ -158,22 +159,17 @@ public class ChatView extends SplitLayout implements GameManager {
         this.txtStory.clear();
 
         UI current = UI.getCurrent();
-        StringBuilder completeText = new StringBuilder();
         aiService.generateNewStoryPart(
-                this.chatClient,
+                this.chatModel,
                 textPrompt,
-                heroCommunicator,
-                response ->
+                HeroUiCommunicator.class,
+                newText ->
                         current.access(
-                                () -> {
-                                    String newText = response.chatResponse().getResult().getOutput().getText();
-                                    completeText.append(newText);
-                                    txtStory.setValue(txtStory.getValue() + newText);
-                                }
+                                () ->
+                                        txtStory.setValue(txtStory.getValue() + newText)
                         ),
-                () -> current.access(() -> handleFinishedStoryPart(completeText.toString()))
+                completeResponse -> current.access(() -> handleFinishedStoryPart(completeResponse.aiMessage().text()))
         );
-
     }
 
     private void handleFinishedStoryPart(String storyPartAsString) {
@@ -184,12 +180,12 @@ public class ChatView extends SplitLayout implements GameManager {
 
         UI current = UI.getCurrent();
         aiService.generateAsciiArt(
-                aiService.createChatClient(false),
+                aiService.createChatModel  (false),
                 EXTRACT_IMAGE_TITLE_PROMPT.formatted(storyPartAsString),
                 responseWithTitle -> {
                     current.access(() -> txtAsciiArt.setTitle(responseWithTitle));
                     aiService.generateAsciiArt(
-                            aiService.createChatClient(false),
+                            aiService.createChatModel(false),
                             CREATE_ASCII_ART_PROMPT.formatted(responseWithTitle),
                             response -> current.access(() -> txtAsciiArt.setValue(response))
                     );

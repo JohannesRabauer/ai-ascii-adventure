@@ -2,9 +2,9 @@ package dev.rabauer.ai_ascii_adventure.ai;
 
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.progressbar.ProgressBar;
+import dev.langchain4j.agent.tool.Tool;
 import dev.rabauer.ai_ascii_adventure.GameManager;
 import dev.rabauer.ai_ascii_adventure.dto.Hero;
-import org.springframework.ai.tool.annotation.Tool;
 
 import java.util.List;
 
@@ -25,17 +25,17 @@ public class HeroUiCommunicator {
         this.gameManager = gameManager;
     }
 
-    @Tool(description = "Get the maximum health points of the hero as integer.")
+    @Tool("Get the maximum health points of the hero as integer.")
     public Integer getMaxHealth() {
         return this.hero.getMaxHealth();
     }
 
-    @Tool(description = "Get the health points of the hero, ranging from 0 (dead) to max health as integer.")
+    @Tool("Get the health points of the hero, ranging from 0 (dead) to max health as integer.")
     public Integer getHealth() {
         return hero.getHealth();
     }
 
-    @Tool(description = "Set the health points of the hero, ranging from 0 (dead) to max health as integer.")
+    @Tool("Set the health points of the hero, ranging from 0 (dead) to max health as integer.")
     public void setHealth(Integer health) {
         this.hero.setHealth(health);
         this.prbHealth.getUI().ifPresent(
@@ -48,17 +48,17 @@ public class HeroUiCommunicator {
         checkForDeath();
     }
 
-    @Tool(description = "Get the maximum mana points of the hero as integer.")
+    @Tool("Get the maximum mana points of the hero as integer.")
     public Integer getMaxMana() {
         return this.hero.getMaxMana();
     }
 
-    @Tool(description = "Get the mana points of the hero, ranging from 0 to max mana as integer.")
+    @Tool("Get the mana points of the hero, ranging from 0 to max mana as integer.")
     public Integer getMana() {
         return hero.getMana();
     }
 
-    @Tool(description = "Set the mana points of the hero, ranging from 0 to max mana as integer.")
+    @Tool("Set the mana points of the hero, ranging from 0 to max mana as integer.")
     public void setMana(Integer mana) {
         this.hero.setMana(mana);
         this.prbHealth.getUI().ifPresent(
@@ -70,24 +70,24 @@ public class HeroUiCommunicator {
         );
     }
 
-    @Tool(description = "Get the full list of inventory items in the hero's inventory as list of strings.")
+    @Tool("Get the full list of inventory items in the hero's inventory as list of strings.")
     public List<String> getInventory() {
         return this.hero.getInventory();
     }
 
-    @Tool(description = "Add one inventory item to the hero's inventory as string.")
+    @Tool("Add one inventory item to the hero's inventory as string.")
     public void addInventory(String newInventoryItem) {
         this.hero.addInventory(newInventoryItem);
         updateInventory();
     }
 
-    @Tool(description = "Completely clear the hero's inventory.")
+    @Tool("Completely clear the hero's inventory.")
     public void clearInventory() {
         this.hero.clearInventory();
         updateInventory();
     }
 
-    @Tool(description = "Removes one inventory item from the hero's inventory as string.")
+    @Tool("Removes one inventory item from the hero's inventory as string.")
     public void removeInventory(String inventoryItemToRemove) {
         this.hero.removeInventory(inventoryItemToRemove);
         updateInventory();
@@ -101,7 +101,7 @@ public class HeroUiCommunicator {
     }
 
 
-    @Tool(description = "The hero succeeded in this game.")
+    @Tool("The hero succeeded in this game.")
     private void winTheGame() {
         this.gameManager.showGameOver(false);
     }

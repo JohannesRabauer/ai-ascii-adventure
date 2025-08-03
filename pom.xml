@@ -31,6 +31,7 @@
         <maven.compiler.release>${java.version}</maven.compiler.release>
         <spring-ai.version>1.1.0-SNAPSHOT</spring-ai.version>
         <vaadin.version>24.8.2</vaadin.version>
+        <langchain4j.version>1.2.0</langchain4j.version>
     </properties>
 
     <repositories>
@@ -61,12 +62,19 @@
             <artifactId>vaadin-spring-boot-starter</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-starter-model-ollama</artifactId>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j</artifactId>
+            <version>${langchain4j.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-starter-model-chat-memory</artifactId>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-ollama</artifactId>
+            <version>${langchain4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-core</artifactId>
+            <version>${langchain4j.version}</version>
         </dependency>
 
         <dependency>
