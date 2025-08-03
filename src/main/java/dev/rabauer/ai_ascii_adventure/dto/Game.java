@@ -3,7 +3,7 @@ package dev.rabauer.ai_ascii_adventure.dto;
 public record Game(Hero hero, Story story) {
     public static final String INITIAL_PROMPT =
             """
-                       Generate an interactive fantasy text adventure game starring a hero named %s. The game should be played turn by turn, with each turn offering a description of the current scene and allowing the player to choose what Hero does next.
+                       Generate an interactive fantasy text adventure game starring a hero. The game should be played turn by turn, with each turn offering a description of the current scene and allowing the player to choose what Hero does next.
                                Game Rules:
                                    - Hero is a brave hero exploring a mysterious fantasy world filled with magic, monsters, and secrets.
                                    - The hero has the following stats which you can use through function calls/tools:
@@ -34,7 +34,13 @@ public record Game(Hero hero, Story story) {
                                      - The "choices" field contains a maximum of 4 options, labeled as string keys "1" through "4".
                                
                                First step:
-                               Begin the story with Hero standing at the edge of a dense, fog-covered forest. His quest is unknown — he must discover it as he explores. 
+                               Begin the story with an already escalated situation where the hero is facing an epic fiend. The stakes are high, 
+                               and the hero must make a quick decision to survive. Describe the scene vividly, including the environment, 
+                               the fiend, and the hero's current state.
+
+                               Initial Hero name: %s
+                               Initialize the Hero with 100 health and 100 mana.
+                               And some random items in the inventory.
                     """;
 
 }
