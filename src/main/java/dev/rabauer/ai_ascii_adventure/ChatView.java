@@ -37,7 +37,7 @@ public class ChatView extends SplitLayout implements GameManager {
     private final TextArea txtStory = new TextArea();
     private final TextArea txtAsciiArt = new TextArea();
 
-    private final Assistant chatModel;
+    private Assistant chatModel;
     private final AiService aiService;
     private ProgressBar prbHealth;
     private ProgressBar prbMana;
@@ -48,7 +48,6 @@ public class ChatView extends SplitLayout implements GameManager {
     @Autowired
     public ChatView(AiService aiService) {
         this.aiService = aiService;
-        this.chatModel = aiService.createChatModel(true); // LangChain4J model creation
 
         this.setSizeFull();
         this.addToPrimary(createAsciiArt());
@@ -76,6 +75,8 @@ public class ChatView extends SplitLayout implements GameManager {
             this.heroCommunicator = new HeroUiCommunicator(
                     hero, this.prbHealth, this.prbMana, this.spnInventory, this
             );
+            
+            this.chatModel = aiService.createChatModel(true, this.heroCommunicator); // LangChain4J model creation
 
             this.game = new Game(hero, new Story(new ArrayList<>()));
 
@@ -162,7 +163,6 @@ public class ChatView extends SplitLayout implements GameManager {
         aiService.generateNewStoryPart(
                 this.chatModel,
                 textPrompt,
-                HeroUiCommunicator.class,
                 newText ->
                         current.access(
                                 () ->
@@ -180,12 +180,12 @@ public class ChatView extends SplitLayout implements GameManager {
 
         UI current = UI.getCurrent();
         aiService.generateAsciiArt(
-                aiService.createChatModel  (false),
+                aiService.createChatModel  (false, null),
                 EXTRACT_IMAGE_TITLE_PROMPT.formatted(storyPartAsString),
                 responseWithTitle -> {
                     current.access(() -> txtAsciiArt.setTitle(responseWithTitle));
                     aiService.generateAsciiArt(
-                            aiService.createChatModel(false),
+                            aiService.createChatModel(false, null),
                             CREATE_ASCII_ART_PROMPT.formatted(responseWithTitle),
                             response -> current.access(() -> txtAsciiArt.setValue(response))
                     );

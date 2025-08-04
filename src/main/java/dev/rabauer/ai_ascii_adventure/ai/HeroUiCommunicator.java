@@ -3,10 +3,17 @@ package dev.rabauer.ai_ascii_adventure.ai;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.progressbar.ProgressBar;
 import dev.langchain4j.agent.tool.Tool;
+import dev.langchain4j.agent.tool.ToolSpecification;
+import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
+import dev.langchain4j.service.tool.ToolExecutor;
 import dev.rabauer.ai_ascii_adventure.GameManager;
 import dev.rabauer.ai_ascii_adventure.dto.Hero;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import static dev.langchain4j.internal.Json.fromJson;
 
 public class HeroUiCommunicator {
 
@@ -16,13 +23,131 @@ public class HeroUiCommunicator {
     private final Span spnInventory;
     private final GameManager gameManager;
 
-
-    public HeroUiCommunicator(Hero hero, ProgressBar prbHealth, ProgressBar prbMana, Span spnInventory, GameManager gameManager) {
+    public HeroUiCommunicator(Hero hero, ProgressBar prbHealth, ProgressBar prbMana, Span spnInventory,
+                              GameManager gameManager) {
         this.hero = hero;
         this.prbHealth = prbHealth;
         this.prbMana = prbMana;
         this.spnInventory = spnInventory;
         this.gameManager = gameManager;
+    }
+
+    public Map<ToolSpecification, ToolExecutor> getToolExecutors() {
+        HashMap<ToolSpecification, ToolExecutor> tools = new HashMap<>();
+        tools.put(
+                ToolSpecification.builder()
+                        .name("getMaxHealth")
+                        .description("Get the maximum health points of the hero as integer.")
+                        .build(),
+                (toolExecutionRequest, memoryId) -> getMaxHealth().toString());
+
+        tools.put(
+                ToolSpecification.builder()
+                        .name("getHealth")
+                        .description(
+                                "Get the health points of the hero, ranging from 0 (dead) to max health as integer.")
+                        .build(),
+                (toolExecutionRequest, memoryId) -> getHealth().toString());
+
+        tools.put(
+                ToolSpecification.builder()
+                        .name("setHealth")
+                        .description(
+                                "Set the health points of the hero, ranging from 0 (dead) to max health as integer.")
+                        .parameters(JsonObjectSchema.builder()
+                                .addIntegerProperty("health", "Health as integer from 0 to 100")
+                                .build())
+                        .build(),
+                (toolExecutionRequest, memoryId) -> {
+                    Integer health = Integer.valueOf(fromJson(toolExecutionRequest.arguments(), Map.class).get("health").toString());
+                    setHealth(health);
+                    return "Health set to " + health;
+                });
+
+        tools.put(
+                ToolSpecification.builder()
+                        .name("getMaxMana")
+                        .description("Get the maximum mana points of the hero as integer.")
+                        .build(),
+                (toolExecutionRequest, memoryId) -> getMaxMana().toString());
+
+        tools.put(
+                ToolSpecification.builder()
+                        .name("getMana")
+                        .description("Get the mana points of the hero, ranging from 0 to max mana as integer.")
+                        .build(),
+                (toolExecutionRequest, memoryId) -> getMana().toString());
+
+        tools.put(
+                ToolSpecification.builder()
+                        .name("setMana")
+                        .description("Set the mana points of the hero, ranging from 0 to max mana as integer.")
+                        .parameters(JsonObjectSchema.builder()
+                                .addIntegerProperty("mana", "Mana as integer from 0 to 100")
+                                .build())
+                        .build(),
+                (toolExecutionRequest, memoryId) -> {
+                    Integer mana = Integer.valueOf(fromJson(toolExecutionRequest.arguments(), Map.class).get("mana").toString());
+                    setMana(mana);
+                    return "Mana set to " + mana;
+                });
+
+        tools.put(
+                ToolSpecification.builder()
+                        .name("getInventory")
+                        .description("Get the full list of inventory items in the hero's inventory as list of strings.")
+                        .build(),
+                (toolExecutionRequest, memoryId) -> getInventory().toString());
+
+        tools.put(
+                ToolSpecification.builder()
+                        .name("addInventory")
+                        .description("Add one inventory item to the hero's inventory as string.")
+                        .parameters(JsonObjectSchema.builder()
+                                .addIntegerProperty("newInventoryItem", "Item to add to the inventory as string")
+                                .build())
+                        .build(),
+                (toolExecutionRequest, memoryId) -> {
+                    String item = fromJson(toolExecutionRequest.arguments(), Map.class).get("newInventoryItem").toString();
+                    addInventory(item);
+                    return "Added inventory item: " + item;
+                });
+
+        tools.put(
+                ToolSpecification.builder()
+                        .name("clearInventory")
+                        .description("Completely clear the hero's inventory.")
+                        .build(),
+                (toolExecutionRequest, memoryId) -> {
+                    clearInventory();
+                    return "Inventory cleared";
+                });
+
+        tools.put(
+                ToolSpecification.builder()
+                        .name("removeInventory")
+                        .description("Removes one inventory item from the hero's inventory as string.")
+                        .parameters(JsonObjectSchema.builder()
+                                .addIntegerProperty("inventoryItemToRemove", "Item to remove from the inventory as string")
+                                .build())
+                        .build(),
+                (toolExecutionRequest, memoryId) -> {
+                    String item = fromJson(toolExecutionRequest.arguments(), Map.class).get("inventoryItemToRemove").toString();
+                    removeInventory(item);
+                    return "Removed inventory item: " + item;
+                });
+
+        tools.put(
+                ToolSpecification.builder()
+                        .name("winTheGame")
+                        .description("The hero succeeded in this game.")
+                        .build(),
+                (toolExecutionRequest, memoryId) -> {
+                    winTheGame();
+                    return "Game won";
+                });
+
+        return tools;
     }
 
     @Tool("Get the maximum health points of the hero as integer.")
@@ -43,8 +168,7 @@ public class HeroUiCommunicator {
                     this.prbHealth.setMax(this.hero.getMaxHealth());
                     this.prbHealth.setMin(0);
                     this.prbHealth.setValue(this.hero.getHealth());
-                })
-        );
+                }));
         checkForDeath();
     }
 
@@ -66,8 +190,7 @@ public class HeroUiCommunicator {
                     this.prbMana.setMax(this.hero.getMaxMana());
                     this.prbMana.setMin(0);
                     this.prbMana.setValue(this.hero.getMana());
-                })
-        );
+                }));
     }
 
     @Tool("Get the full list of inventory items in the hero's inventory as list of strings.")
@@ -94,12 +217,10 @@ public class HeroUiCommunicator {
     }
 
     public void updateInventory() {
-        spnInventory.getUI().ifPresent(ui -> ui.access(() ->
-        {
+        spnInventory.getUI().ifPresent(ui -> ui.access(() -> {
             spnInventory.setText(String.join(", ", this.hero.getInventory()));
         }));
     }
-
 
     @Tool("The hero succeeded in this game.")
     private void winTheGame() {
