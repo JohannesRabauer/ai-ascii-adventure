@@ -5,6 +5,7 @@ import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.html.NativeLabel;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -14,7 +15,6 @@ import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.Route;
-import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.rabauer.ai_ascii_adventure.ai.AiService;
 import dev.rabauer.ai_ascii_adventure.ai.Assistant;
 import dev.rabauer.ai_ascii_adventure.ai.HeroUiCommunicator;
@@ -36,9 +36,8 @@ public class ChatView extends SplitLayout implements GameManager {
 
     private final TextArea txtStory = new TextArea();
     private final TextArea txtAsciiArt = new TextArea();
-
-    private Assistant chatModel;
     private final AiService aiService;
+    private Assistant chatModel;
     private ProgressBar prbHealth;
     private ProgressBar prbMana;
     private HeroUiCommunicator heroCommunicator;
@@ -75,7 +74,7 @@ public class ChatView extends SplitLayout implements GameManager {
             this.heroCommunicator = new HeroUiCommunicator(
                     hero, this.prbHealth, this.prbMana, this.spnInventory, this
             );
-            
+
             this.chatModel = aiService.createChatModel(true, this.heroCommunicator); // LangChain4J model creation
 
             this.game = new Game(hero, new Story(new ArrayList<>()));
@@ -109,22 +108,36 @@ public class ChatView extends SplitLayout implements GameManager {
         txtAsciiArt.setTitle("Graphics");
         txtAsciiArt.getStyle().set("font-family", "'Courier New', monospace");
 
-        prbHealth = new ProgressBar(0, 1, 1);
-        prbHealth.setWidthFull();
-        prbMana = new ProgressBar(0, 1, 0.5);
-        prbMana.setWidthFull();
+        ProgressBarComponentPair pairHealth = generateHealthManaBar("Health", "red");
+        prbHealth = pairHealth.progressBar();
+        ProgressBarComponentPair pairMana = generateHealthManaBar("Mana", "blue");
+        prbMana = pairMana.progressBar();
 
-        HorizontalLayout hlStatusBar = new HorizontalLayout(prbHealth, prbMana);
+        HorizontalLayout hlStatusBar = new HorizontalLayout(pairHealth.component, pairMana.component);
         hlStatusBar.setWidthFull();
+        hlStatusBar.setSpacing(false);
 
+        NativeLabel inventoryTitle = new NativeLabel("Inventory");
         spnInventory = new Span();
         spnInventory.setWidthFull();
         spnInventory.setHeight("100px");
-        HorizontalLayout hlInventory = new HorizontalLayout(spnInventory);
-        hlInventory.setHeight("100px");
-        hlInventory.setWidthFull();
+        VerticalLayout vlInventory = new VerticalLayout(inventoryTitle, spnInventory);
+        vlInventory.setSpacing(false);
+        vlInventory.setHeight("100px");
+        vlInventory.setWidthFull();
 
-        return new VerticalLayout(txtAsciiArt, hlStatusBar, hlInventory);
+        return new VerticalLayout(txtAsciiArt, hlStatusBar, vlInventory);
+    }
+
+    private ProgressBarComponentPair generateHealthManaBar(String title, String color) {
+        ProgressBar newProgressBar = new ProgressBar(0, 100, 100);
+        newProgressBar.setWidthFull();
+        newProgressBar.setHeight("20px");
+        newProgressBar.getStyle().set("--lumo-primary-color", color);
+
+        NativeLabel newLabel = new NativeLabel(title);
+
+        return new ProgressBarComponentPair(newProgressBar, new VerticalLayout(newLabel, newProgressBar));
     }
 
     private Component createStoryComponent() {
@@ -180,7 +193,7 @@ public class ChatView extends SplitLayout implements GameManager {
 
         UI current = UI.getCurrent();
         aiService.generateAsciiArt(
-                aiService.createChatModel  (false, null),
+                aiService.createChatModel(false, null),
                 EXTRACT_IMAGE_TITLE_PROMPT.formatted(storyPartAsString),
                 responseWithTitle -> {
                     current.access(() -> txtAsciiArt.setTitle(responseWithTitle));
@@ -191,5 +204,8 @@ public class ChatView extends SplitLayout implements GameManager {
                     );
                 }
         );
+    }
+
+    record ProgressBarComponentPair(ProgressBar progressBar, Component component) {
     }
 }
