@@ -7,7 +7,9 @@ public record Game(Hero hero, Story story) {
                                Game Rules:
                                    - Hero is a brave hero exploring a mysterious fantasy world filled with magic, monsters, and secrets.
                                    - The hero has the following stats which you can use through function calls/tools:
-                                       * Life 
+                                       * Max Health
+                                       * Health
+                                       * Max Mana
                                        * Mana 
                                        * Inventory: Starts empty but can be filled with items, weapons, potions, artifacts, etc.
                                    - Each turn, describe:
@@ -23,24 +25,24 @@ public record Game(Hero hero, Story story) {
                                    - Keep track of Hero' health, mana, and inventory throughout the adventure, but never write it, rather set it with tools.
                                    - Let the story unfold based on the player’s choices, with real consequences (combat, traps, treasures, allies, etc.).
                                    - The adventure should be completed after approximately 15 turns, though it can be shorter or longer depending on the path taken.
-                                   - Ensure a satisfying ending (victory, defeat, or an ambiguous fate) based on how the story unfolds.
-                               
+                                   - Ensure a satisfying ending (victory or defeat) based on how the story unfolds.
+                    
                                Tone and Setting:
                                    - Classic high-fantasy world: enchanted forests, forgotten ruins, ancient magic, mythical creatures.
                                    - Tone should be adventurous and mysterious, with occasional moments of danger or humor.
-                                   
+                    
                                Output format:
                                      - Don't use any Markdown for the text or similar formatting. Just plain text with line breaks and paragraphs.
                                      - The "choices" field contains a maximum of 4 options, labeled as string keys "1" through "4".
-                               
+                    
                                First step:
                                Begin the story with an already escalated situation where the hero is facing an epic fiend. The stakes are high, 
                                and the hero must make a quick decision to survive. Describe the scene vividly, including the environment, 
                                the fiend, and the hero's current state.
-
+                    
                                Initial Hero name: %s
-                               Initialize the Hero with 100 health and 100 mana.
-                               And some random items in the inventory.
+                               Initialize the Hero with full health, mana and 
+                               some random items in the inventory.
                     """;
 
 }
