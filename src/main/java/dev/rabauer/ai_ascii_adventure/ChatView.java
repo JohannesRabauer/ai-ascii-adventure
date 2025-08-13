@@ -75,7 +75,10 @@ public class ChatView extends SplitLayout implements GameManager {
                     hero, this.prbHealth, this.prbMana, this.spnInventory, this
             );
 
-            this.chatModel = aiService.createChatModel(true, this.heroCommunicator); // LangChain4J model creation
+            this.chatModel = aiService.createChatModel(
+                    true,
+                    this.heroCommunicator
+            );
 
             this.game = new Game(hero, new Story(new ArrayList<>()));
 
@@ -86,21 +89,18 @@ public class ChatView extends SplitLayout implements GameManager {
     }
 
     public void showGameOver(boolean fail) {
-        UI.getCurrent().access(() ->
-        {
-            Dialog dialog = new Dialog();
-            dialog.setCloseOnOutsideClick(false);
-            dialog.setCloseOnEsc(false);
+        Dialog dialog = new Dialog();
+        dialog.setCloseOnOutsideClick(false);
+        dialog.setCloseOnEsc(false);
 
-            if (fail) {
-                dialog.setHeaderTitle("Game Over");
-                dialog.add(new Span("You died. Try again soon."));
-            } else {
-                dialog.setHeaderTitle("Victory!");
-                dialog.add(new Span("You finished the game! Congratulations!"));
-            }
-            dialog.open();
-        });
+        if (fail) {
+            dialog.setHeaderTitle("Game Over");
+            dialog.add(new Span("You died. Try again soon."));
+        } else {
+            dialog.setHeaderTitle("Victory!");
+            dialog.add(new Span("You finished the game! Congratulations!"));
+        }
+        dialog.open();
     }
 
     private Component createAsciiArt() {

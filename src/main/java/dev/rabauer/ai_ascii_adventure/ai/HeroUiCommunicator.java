@@ -98,7 +98,7 @@ public class HeroUiCommunicator {
                         .name("addInventoryItem")
                         .description("Add a inventory item to the hero's inventory as string.")
                         .parameters(JsonObjectSchema.builder()
-                                .addIntegerProperty("newInventoryItem", "Item to add to the inventory as string")
+                                .addStringProperty("newInventoryItem", "Item to add to the inventory as string")
                                 .build())
                         .build(),
                 (toolExecutionRequest, memoryId) -> {
@@ -193,18 +193,23 @@ public class HeroUiCommunicator {
     }
 
     public void updateInventory() {
-        spnInventory.getUI().ifPresent(ui -> ui.access(() -> {
-            spnInventory.setText(String.join(", ", this.hero.getInventory()));
-        }));
+        spnInventory.getUI().ifPresent(ui -> ui.access(() ->
+                spnInventory.setText(String.join(", ", this.hero.getInventory()))
+        ));
     }
 
     private void winTheGame() {
-        this.gameManager.showGameOver(false);
+        spnInventory.getUI().ifPresent(ui -> ui.access(() ->
+                this.gameManager.showGameOver(false)
+        ));
     }
 
     public void checkForDeath() {
         if (this.hero.getHealth() <= 0) {
-            this.gameManager.showGameOver(true);
+
+            spnInventory.getUI().ifPresent(ui -> ui.access(() ->
+                    this.gameManager.showGameOver(true)
+            ));
         }
     }
 }
