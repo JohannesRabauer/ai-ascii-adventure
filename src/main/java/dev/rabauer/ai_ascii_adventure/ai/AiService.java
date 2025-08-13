@@ -3,7 +3,6 @@ package dev.rabauer.ai_ascii_adventure.ai;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.memory.chat.ChatMemoryProvider;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
-import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
@@ -58,12 +57,12 @@ public class AiService {
     public Assistant createChatModel(boolean withMemory, HeroUiCommunicator tools) {
 
         // Use OllamaStreamingChatModel for LangChain4J Ollama integration, with memory
-        StreamingChatModel model = OllamaStreamingChatModel.builder()
+        OllamaStreamingChatModel model = OllamaStreamingChatModel.builder()
                 .baseUrl(ollamaBaseUrl)
                 .modelName(ollamaModelName)
+                .think(true)
                 .timeout(Duration.ofMinutes(10))
                 .build();
-
         AiServices<Assistant> streamingChatModel = AiServices
                 .builder(Assistant.class)
                 .streamingChatModel(model);
@@ -85,8 +84,8 @@ public class AiService {
 
             streamingChatModel.chatMemoryProvider(chatMemoryProvider);
         }
-        return streamingChatModel.build();
 
+        return streamingChatModel.build();
     }
 
     public void generateNewStoryPart(Assistant chatModel, String textPrompt,
