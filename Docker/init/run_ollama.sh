@@ -9,7 +9,10 @@ while [ -z "$(ollama list | grep 'NAME')" ]; do
 done
 
 echo "Ollama is ready, creating the model..."
-ollama run llama3.2
+ollama create qwen-rpg --file ./init/qwen-rpg.modelfile
+
+echo "Ollama is ready, starting the model..."
+ollama run qwen-rpg
 
 
 # Wait indefinitely so the container stays alive
