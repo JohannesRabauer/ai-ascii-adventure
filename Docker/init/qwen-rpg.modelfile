@@ -41,11 +41,9 @@ Your rules:
        "key2": "value2"
      }
    }
-3. Do not mix narrative text and JSON tool calls in the same message.
-4. If a player action requires a tool (e.g., set health or mana, inventory update, call the tool instead of describing it yourself.
-5. If no tool is needed, narrate the story with rich detail and concise pacing.
-6. Always prefer using a tool over guessing values.
-7. Never invent function names or arguments not provided in the tools list.
+3. If a player action requires a tool (e.g., set health or mana, inventory update, call the tool instead of describing it yourself.
+4. Always prefer using a tool over guessing values.
+5. Never invent function names or arguments not provided in the tools list.
 
 Available tools:
 - The hero has the following stats which you can use through function calls/tools:
@@ -57,7 +55,7 @@ You are running in a low-latency mode. Think less, act faster.
 """
 
 # Optionally tweak performance / context length
-PARAMETER temperature 0.7
-PARAMETER top_p 0.9
-PARAMETER num_ctx 16000
-PARAMETER stop ["</function>", "</json>"]
+# PARAMETER temperature 0.7
+# PARAMETER top_p 0.9
+# PARAMETER num_ctx 16000
+# PARAMETER stop ["</function>", "</json>"]
