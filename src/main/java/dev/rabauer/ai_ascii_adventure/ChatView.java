@@ -28,7 +28,7 @@ import java.util.ArrayList;
 
 import static dev.rabauer.ai_ascii_adventure.ai.AiService.CREATE_ASCII_ART_PROMPT;
 import static dev.rabauer.ai_ascii_adventure.ai.AiService.EXTRACT_IMAGE_TITLE_PROMPT;
-import static dev.rabauer.ai_ascii_adventure.dto.Game.INITIAL_PROMPT;
+import static dev.rabauer.ai_ascii_adventure.dto.Game.INITIAL_STORY_PROMPT;
 
 @Route(value = "", layout = MainLayout.class)
 public class ChatView extends SplitLayout implements GameManager {
@@ -75,14 +75,11 @@ public class ChatView extends SplitLayout implements GameManager {
                     hero, this.prbHealth, this.prbMana, this.spnInventory, this
             );
 
-            this.chatModel = aiService.createChatModel(
-                    true,
-                    this.heroCommunicator
-            );
+            this.chatModel = aiService.createChatModel(true, null);
 
             this.game = new Game(hero, new Story(new ArrayList<>()));
 
-            generateNewStoryPart(INITIAL_PROMPT.formatted(hero.getName()));
+            generateNewStoryPart(INITIAL_STORY_PROMPT.formatted(hero.getName()));
         });
         dialog.getFooter().add(saveButton);
         dialog.open();
@@ -185,19 +182,33 @@ public class ChatView extends SplitLayout implements GameManager {
         );
     }
 
-    private void handleFinishedStoryPart(String storyPartAsString) {
-        StoryPart storyPart = new StoryPart(storyPartAsString);
+    private void handleFinishedStoryPart(String finishedStory) {
+        StoryPart storyPart = new StoryPart(finishedStory);
         this.game.story().storyParts().add(storyPart);
 
+        generateAsciiArt(finishedStory);
+        generateFunctionCalls(finishedStory);
+    }
+
+    private void generateFunctionCalls(String finishedStory) {
+        aiService.generateNewChatResponse(
+                aiService.createChatModel(false, this.heroCommunicator),
+                Game.DEFAULT_TOOL_PROMPT.formatted(finishedStory),
+                responseWithTitle -> {
+                }
+        );
+    }
+
+    private void generateAsciiArt(String finishedStory) {
         txtAsciiArt.clear();
 
         UI current = UI.getCurrent();
-        aiService.generateAsciiArt(
+        aiService.generateNewChatResponse(
                 aiService.createChatModel(false, null),
-                EXTRACT_IMAGE_TITLE_PROMPT.formatted(storyPartAsString),
+                EXTRACT_IMAGE_TITLE_PROMPT.formatted(finishedStory),
                 responseWithTitle -> {
                     current.access(() -> txtAsciiArt.setTitle(responseWithTitle));
-                    aiService.generateAsciiArt(
+                    aiService.generateNewChatResponse(
                             aiService.createChatModel(false, null),
                             CREATE_ASCII_ART_PROMPT.formatted(responseWithTitle),
                             response -> current.access(() -> txtAsciiArt.setValue(response))

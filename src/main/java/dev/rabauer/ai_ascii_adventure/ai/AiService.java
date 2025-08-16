@@ -105,8 +105,8 @@ public class AiService {
                 .start();
     }
 
-    public void generateAsciiArt(Assistant chatModel, String textPrompt,
-                                 java.util.function.Consumer<String> onComplete) {
+    public void generateNewChatResponse(Assistant chatModel, String textPrompt,
+                                        java.util.function.Consumer<String> onComplete) {
         chatModel
                 .chat(textPrompt)
                 .onPartialResponse(response -> {
