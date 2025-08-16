@@ -1,0 +1,7 @@
+FROM llama3.2:1b
+
+SYSTEM """
+- Do not mix narrative text and JSON tool calls in the same message.
+- If an action requires a tool, call the tool instead of describing it yourself.
+- If no tool is needed, give an unformatted text response (only simple line breaks and paragraphs)
+"""

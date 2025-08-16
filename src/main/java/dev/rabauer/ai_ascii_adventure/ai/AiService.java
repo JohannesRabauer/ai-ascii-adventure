@@ -60,7 +60,7 @@ public class AiService {
         OllamaStreamingChatModel model = OllamaStreamingChatModel.builder()
                 .baseUrl(ollamaBaseUrl)
                 .modelName(ollamaModelName)
-                .think(true)
+                .think(false)
                 .timeout(Duration.ofMinutes(10))
                 .build();
         AiServices<Assistant> streamingChatModel = AiServices
