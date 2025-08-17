@@ -1,4 +1,4 @@
-# AI ASCII Adventure powered by Java and Ollama
+# AI-driven Story adventure powered by Java and Ollama
 
 ## YouTube
 
@@ -10,18 +10,8 @@ the [live coding sessions on YouTube](https://youtube.com/live/2P7NASv-LdE).
 There's a [docker-compose file](./Docker/docker-compose.yml) that boots up an ollama docker and downloads the llama3.2
 model.
 
-## Current features
+## Trello
 
-* Async talking to LLM
-* Input hero name
-* Create a story through the LLM and make some choices
-* Added memory to the LLM to actually make the game playable
-
-## Planned features
-
-* Allow only number inputs
-* ASCII Art generation
-* Function calling to adjust Health, Mana and Inventory
-* Allow using items from inventory
-* Clear goal of the game
-* Make it possible to loose the game
+If you are interested in the development of this project, you can find the
+development board
+on [Trello](https://trello.com/invite/b/68a21e5e5276ae326e17a463/ATTI4a0821405f00cdf3016489629e91b9b62AC891B8/java-local-ai-rpg-game).
