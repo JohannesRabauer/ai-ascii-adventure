@@ -36,3 +36,4 @@ build/
 /src/main/frontend/generated
 src/main/frontend/index.html
 /Docker/stable-diffusion
+/Docker/db-data
