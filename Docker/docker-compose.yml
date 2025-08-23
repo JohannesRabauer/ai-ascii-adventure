@@ -18,27 +18,27 @@ services:
               capabilities: [ gpu ]
     entrypoint: [ "/bin/sh", "/init/run_ollama.sh" ]
 
-  stable-diffusion-webui:
-    image: universonic/stable-diffusion-webui:minimal
-    command: --no-half --no-half-vae --precision full
-    runtime: nvidia
-    ports:
-      - "8081:8080"
-      - "7860:7860"
-    volumes:
-      - ./stable-diffusion/inputs:/app/stable-diffusion-webui/inputs
-      - ./stable-diffusion/textual_inversion_templates:/app/stable-diffusion-webui/textual_inversion_templates
-      - ./stable-diffusion/embeddings:/app/stable-diffusion-webui/embeddings
-      - ./stable-diffusion/extensions:/app/stable-diffusion-webui/extensions
-      - ./stable-diffusion/models:/app/stable-diffusion-webui/models
-      - ./stable-diffusion/localizations:/app/stable-diffusion-webui/localizations
-      - ./stable-diffusion/outputs:/app/stable-diffusion-webui/outputs
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              capabilities: [ gpu ]
+#  stable-diffusion-webui:
+#    image: universonic/stable-diffusion-webui:minimal
+#    command: --no-half --no-half-vae --precision full
+#    runtime: nvidia
+#    ports:
+#      - "8081:8080"
+#      - "7860:7860"
+#    volumes:
+#      - ./stable-diffusion/inputs:/app/stable-diffusion-webui/inputs
+#      - ./stable-diffusion/textual_inversion_templates:/app/stable-diffusion-webui/textual_inversion_templates
+#      - ./stable-diffusion/embeddings:/app/stable-diffusion-webui/embeddings
+#      - ./stable-diffusion/extensions:/app/stable-diffusion-webui/extensions
+#      - ./stable-diffusion/models:/app/stable-diffusion-webui/models
+#      - ./stable-diffusion/localizations:/app/stable-diffusion-webui/localizations
+#      - ./stable-diffusion/outputs:/app/stable-diffusion-webui/outputs
+#    deploy:
+#      resources:
+#        reservations:
+#          devices:
+#            - driver: nvidia
+#              capabilities: [ gpu ]
 
 volumes:
   ollama_data:
