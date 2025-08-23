@@ -8,7 +8,7 @@ import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.tool.ToolExecution;
-import dev.langchain4j.store.memory.chat.InMemoryChatMemoryStore;
+import dev.langchain4j.store.memory.chat.ChatMemoryStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -45,13 +45,14 @@ public class AiService {
                 Task: Create a simple and recognizable ASCII art representation for the following title of the image
                 Title of the image: %s
             """;
+    private final ChatMemoryStore memoryStore;
     @Value("${ollama.base-url:http://localhost:11434}")
     private String ollamaBaseUrl;
     @Value("${ollama.model-name:llama3.2}")
     private String ollamaModelName;
 
-    public AiService() {
-        // Default constructor for Spring
+    public AiService(PostgresChatMemory memoryStore) {
+        this.memoryStore = memoryStore;
     }
 
     public Assistant createChatModel(boolean withMemory, HeroUiCommunicator tools) {
@@ -72,15 +73,16 @@ public class AiService {
         }
 
         if (withMemory) {
-            // Create a persistent chat memory store for the chat model
-            InMemoryChatMemoryStore store = new InMemoryChatMemoryStore();
-
             // Create a chat memory provider that uses the persistent store
-            ChatMemoryProvider chatMemoryProvider = memoryId -> MessageWindowChatMemory.builder()
-                    .id(memoryId)
-                    .maxMessages(20)
-                    .chatMemoryStore(store)
-                    .build();
+            ChatMemoryProvider chatMemoryProvider = memoryId ->
+            {
+                tools.setMemoryId(memoryId);
+                return MessageWindowChatMemory.builder()
+                        .id(memoryId)
+                        .maxMessages(20)
+                        .chatMemoryStore(memoryStore)
+                        .build();
+            };
 
             streamingChatModel.chatMemoryProvider(chatMemoryProvider);
         }

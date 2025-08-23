@@ -1,4 +1,4 @@
-package dev.rabauer.ai_ascii_adventure.dto;
+package dev.rabauer.ai_ascii_adventure.domain;
 
 import java.util.ArrayList;
 import java.util.List;

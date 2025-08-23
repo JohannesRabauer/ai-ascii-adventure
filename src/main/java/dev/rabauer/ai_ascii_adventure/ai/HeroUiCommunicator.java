@@ -7,8 +7,9 @@ import com.vaadin.flow.component.progressbar.ProgressBar;
 import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
 import dev.langchain4j.service.tool.ToolExecutor;
-import dev.rabauer.ai_ascii_adventure.GameManager;
-import dev.rabauer.ai_ascii_adventure.dto.Hero;
+import dev.rabauer.ai_ascii_adventure.GameOverManager;
+import dev.rabauer.ai_ascii_adventure.domain.Game;
+import dev.rabauer.ai_ascii_adventure.persistence.GamePersistenceService;
 
 import java.util.HashMap;
 import java.util.List;
@@ -18,19 +19,21 @@ import static dev.langchain4j.internal.Json.fromJson;
 
 public class HeroUiCommunicator {
 
-    private final Hero hero;
+    private final Game game;
     private final ProgressBar prbHealth;
     private final ProgressBar prbMana;
     private final Span spnInventory;
-    private final GameManager gameManager;
+    private final GameOverManager gameOverManager;
+    private final GamePersistenceService gamePersistenceService;
 
-    public HeroUiCommunicator(Hero hero, ProgressBar prbHealth, ProgressBar prbMana, Span spnInventory,
-                              GameManager gameManager) {
-        this.hero = hero;
+    public HeroUiCommunicator(Game game, ProgressBar prbHealth, ProgressBar prbMana, Span spnInventory,
+                              GameOverManager gameOverManager, GamePersistenceService gamePersistenceService) {
+        this.game = game;
         this.prbHealth = prbHealth;
         this.prbMana = prbMana;
         this.spnInventory = spnInventory;
-        this.gameManager = gameManager;
+        this.gameOverManager = gameOverManager;
+        this.gamePersistenceService = gamePersistenceService;
     }
 
     public Map<ToolSpecification, ToolExecutor> getToolExecutors() {
@@ -145,71 +148,76 @@ public class HeroUiCommunicator {
     }
 
     public Integer getHealth() {
-        return hero.getHealth();
+        return game.getHero().getHealth();
     }
 
     public void setHealth(Integer health) {
-        this.hero.setHealth(health);
+        this.game.getHero().setHealth(health);
         this.prbHealth.getUI().ifPresent(
                 ui -> ui.access(() -> {
                     this.prbHealth.setMax(100);
                     this.prbHealth.setMin(0);
-                    this.prbHealth.setValue(this.hero.getHealth());
+                    this.prbHealth.setValue(this.game.getHero().getHealth());
                 }));
         checkForDeath();
     }
 
     public Integer getMana() {
-        return hero.getMana();
+        return game.getHero().getMana();
     }
 
     public void setMana(Integer mana) {
-        this.hero.setMana(mana);
+        this.game.getHero().setMana(mana);
         this.prbHealth.getUI().ifPresent(
                 ui -> ui.access(() -> {
                     this.prbMana.setMax(100);
                     this.prbMana.setMin(0);
-                    this.prbMana.setValue(this.hero.getMana());
+                    this.prbMana.setValue(this.game.getHero().getMana());
                 }));
     }
 
     public List<String> getInventory() {
-        return this.hero.getInventory();
+        return this.game.getHero().getInventory();
     }
 
     public void addInventory(String newInventoryItem) {
-        this.hero.addInventory(newInventoryItem);
+        this.game.getHero().addInventory(newInventoryItem);
         updateInventory();
     }
 
     public void clearInventory() {
-        this.hero.clearInventory();
+        this.game.getHero().clearInventory();
         updateInventory();
     }
 
     public void removeInventory(String inventoryItemToRemove) {
-        this.hero.removeInventory(inventoryItemToRemove);
+        this.game.getHero().removeInventory(inventoryItemToRemove);
         updateInventory();
     }
 
     public void updateInventory() {
         spnInventory.getUI().ifPresent(ui -> ui.access(() ->
-                spnInventory.setText(String.join(", ", this.hero.getInventory()))
+                spnInventory.setText(String.join(", ", this.game.getHero().getInventory()))
         ));
     }
 
     private void winTheGame() {
         spnInventory.getUI().ifPresent(ui -> ui.access(() ->
-                this.gameManager.showGameOver(false)
+                this.gameOverManager.showGameOver(false)
         ));
     }
 
     public void checkForDeath() {
-        if (this.hero.getHealth() <= 0) {
+        if (this.game.getHero().getHealth() <= 0) {
 
             spnInventory.getUI().ifPresent(ui -> ui.access(() ->
-                    this.gameManager.showGameOver(true)
+                    this.gameOverManager.showGameOver(true)
             ));
         }
+    }
+
+    public void setMemoryId(Object memoryId) {
+        this.game.setMemoryId(memoryId);
+        this.gamePersistenceService.saveGame(this.game);
     }
 }

@@ -1,5 +1,5 @@
 package dev.rabauer.ai_ascii_adventure;
 
-public interface GameManager {
+public interface GameOverManager {
     void showGameOver(boolean fail);
 }

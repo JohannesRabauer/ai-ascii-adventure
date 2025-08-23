@@ -1,6 +1,6 @@
-package dev.rabauer.ai_ascii_adventure.dto;
+package dev.rabauer.ai_ascii_adventure.domain;
 
-public record Game(Hero hero, Story story) {
+public class Game {
     public static final String INITIAL_STORY_PROMPT = """
                You are a story teller AI that generates an interactive fantasy text adventure game starring a
                hero. The game should be played turn by turn, with each turn offering a description of the
@@ -65,4 +65,29 @@ public record Game(Hero hero, Story story) {
               Story for the tool calling:
               %s              
             """;
+
+    private final Hero hero;
+    private final Story story;
+    private Object memoryId;
+
+    public Game(Hero hero, Story story) {
+        this.hero = hero;
+        this.story = story;
+    }
+
+    public Hero getHero() {
+        return hero;
+    }
+
+    public Story getStory() {
+        return story;
+    }
+
+    public Object getMemoryId() {
+        return memoryId;
+    }
+
+    public void setMemoryId(Object memoryId) {
+        this.memoryId = memoryId;
+    }
 }

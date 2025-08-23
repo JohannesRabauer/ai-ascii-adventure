@@ -18,25 +18,26 @@ import com.vaadin.flow.router.Route;
 import dev.rabauer.ai_ascii_adventure.ai.AiService;
 import dev.rabauer.ai_ascii_adventure.ai.Assistant;
 import dev.rabauer.ai_ascii_adventure.ai.HeroUiCommunicator;
-import dev.rabauer.ai_ascii_adventure.dto.Game;
-import dev.rabauer.ai_ascii_adventure.dto.Hero;
-import dev.rabauer.ai_ascii_adventure.dto.Story;
-import dev.rabauer.ai_ascii_adventure.dto.StoryPart;
-import org.springframework.beans.factory.annotation.Autowired;
+import dev.rabauer.ai_ascii_adventure.domain.Game;
+import dev.rabauer.ai_ascii_adventure.domain.Hero;
+import dev.rabauer.ai_ascii_adventure.domain.Story;
+import dev.rabauer.ai_ascii_adventure.domain.StoryPart;
+import dev.rabauer.ai_ascii_adventure.persistence.GamePersistenceService;
 
 import java.util.ArrayList;
 
 import static dev.rabauer.ai_ascii_adventure.ai.AiService.CREATE_ASCII_ART_PROMPT;
 import static dev.rabauer.ai_ascii_adventure.ai.AiService.EXTRACT_IMAGE_TITLE_PROMPT;
-import static dev.rabauer.ai_ascii_adventure.dto.Game.INITIAL_STORY_PROMPT;
+import static dev.rabauer.ai_ascii_adventure.domain.Game.INITIAL_STORY_PROMPT;
 
 @Route(value = "", layout = MainLayout.class)
-public class ChatView extends SplitLayout implements GameManager {
+public class ChatView extends SplitLayout implements GameOverManager {
 
 
     private final TextArea txtStory = new TextArea();
     private final TextArea txtAsciiArt = new TextArea();
     private final AiService aiService;
+    private final GamePersistenceService gamePersistenceService;
     private Assistant chatModel;
     private ProgressBar prbHealth;
     private ProgressBar prbMana;
@@ -44,9 +45,10 @@ public class ChatView extends SplitLayout implements GameManager {
     private Span spnInventory;
     private Game game;
 
-    @Autowired
-    public ChatView(AiService aiService) {
+
+    public ChatView(AiService aiService, GamePersistenceService gamePersistenceService) {
         this.aiService = aiService;
+        this.gamePersistenceService = gamePersistenceService;
 
         this.setSizeFull();
         this.addToPrimary(createAsciiArt());
@@ -70,14 +72,15 @@ public class ChatView extends SplitLayout implements GameManager {
         saveButton.addClickListener(buttonClickEvent ->
         {
             dialog.close();
+
             Hero hero = new Hero(txtHeroName.getValue());
+            this.game = new Game(hero, new Story(new ArrayList<>()));
+
             this.heroCommunicator = new HeroUiCommunicator(
-                    hero, this.prbHealth, this.prbMana, this.spnInventory, this
+                    game, this.prbHealth, this.prbMana, this.spnInventory, this, gamePersistenceService
             );
 
-            this.chatModel = aiService.createChatModel(true, null);
-
-            this.game = new Game(hero, new Story(new ArrayList<>()));
+            this.chatModel = aiService.createChatModel(true, this.heroCommunicator);
 
             generateNewStoryPart(INITIAL_STORY_PROMPT.formatted(hero.getName()));
         });
@@ -184,7 +187,7 @@ public class ChatView extends SplitLayout implements GameManager {
 
     private void handleFinishedStoryPart(String finishedStory) {
         StoryPart storyPart = new StoryPart(finishedStory);
-        this.game.story().storyParts().add(storyPart);
+        this.game.getStory().storyParts().add(storyPart);
 
         generateAsciiArt(finishedStory);
         generateFunctionCalls(finishedStory);
