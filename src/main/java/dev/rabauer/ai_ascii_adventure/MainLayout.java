@@ -8,11 +8,15 @@ import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.router.Layout;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import dev.rabauer.ai_ascii_adventure.persistence.GamePersistenceService;
 
 @Layout
 public class MainLayout extends AppLayout {
 
-    public MainLayout() {
+    private final GamePersistenceService gamePersistenceService;
+
+    public MainLayout(GamePersistenceService gamePersistenceService) {
+        this.gamePersistenceService = gamePersistenceService;
         DrawerToggle toggle = new DrawerToggle();
 
         H1 title = new H1("MyApp");
@@ -29,8 +33,19 @@ public class MainLayout extends AppLayout {
     }
 
     private Nav getSideNav() {
-        RouterLink homeLink = new RouterLink("Game 1", ChatView.class);
+        Nav sideNav = new Nav();
+        gamePersistenceService.loadGames().forEach(game -> {
+            sideNav.add(
+                    new RouterLink(
+                            game.getTitle(),
+                            ChatView.class,
+                            game.getEntityId() + ""
+                    )
+            );
+        });
 
-        return new Nav(homeLink);
+        sideNav.add(new RouterLink("New game...", ChatView.class));
+
+        return sideNav;
     }
 }

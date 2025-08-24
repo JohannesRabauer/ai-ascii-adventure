@@ -14,9 +14,12 @@ import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.value.ValueChangeMode;
+import com.vaadin.flow.router.BeforeEvent;
+import com.vaadin.flow.router.HasUrlParameter;
+import com.vaadin.flow.router.OptionalParameter;
 import com.vaadin.flow.router.Route;
 import dev.rabauer.ai_ascii_adventure.ai.AiService;
-import dev.rabauer.ai_ascii_adventure.ai.Assistant;
+import dev.rabauer.ai_ascii_adventure.ai.AssistantWithMemory;
 import dev.rabauer.ai_ascii_adventure.ai.HeroUiCommunicator;
 import dev.rabauer.ai_ascii_adventure.domain.Game;
 import dev.rabauer.ai_ascii_adventure.domain.Hero;
@@ -25,20 +28,19 @@ import dev.rabauer.ai_ascii_adventure.domain.StoryPart;
 import dev.rabauer.ai_ascii_adventure.persistence.GamePersistenceService;
 
 import java.util.ArrayList;
+import java.util.Optional;
 
 import static dev.rabauer.ai_ascii_adventure.ai.AiService.CREATE_ASCII_ART_PROMPT;
 import static dev.rabauer.ai_ascii_adventure.ai.AiService.EXTRACT_IMAGE_TITLE_PROMPT;
 import static dev.rabauer.ai_ascii_adventure.domain.Game.INITIAL_STORY_PROMPT;
 
-@Route(value = "", layout = MainLayout.class)
-public class ChatView extends SplitLayout implements GameOverManager {
-
-
+@Route(value = "game", layout = MainLayout.class)
+public class ChatView extends SplitLayout implements GameOverManager, HasUrlParameter<String> {
     private final TextArea txtStory = new TextArea();
     private final TextArea txtAsciiArt = new TextArea();
     private final AiService aiService;
     private final GamePersistenceService gamePersistenceService;
-    private Assistant chatModel;
+    private AssistantWithMemory chatModel;
     private ProgressBar prbHealth;
     private ProgressBar prbMana;
     private HeroUiCommunicator heroCommunicator;
@@ -53,39 +55,6 @@ public class ChatView extends SplitLayout implements GameOverManager {
         this.setSizeFull();
         this.addToPrimary(createAsciiArt());
         this.addToSecondary(createStoryComponent());
-
-        openStartDialog();
-    }
-
-    private void openStartDialog() {
-        Dialog dialog = new Dialog();
-        dialog.setCloseOnOutsideClick(false);
-        dialog.setCloseOnEsc(false);
-
-        dialog.setHeaderTitle("Input Hero name");
-
-        TextField txtHeroName = new TextField("Hero name");
-        txtHeroName.setValue("Hans");
-        dialog.add(txtHeroName);
-
-        Button saveButton = new Button("Ok");
-        saveButton.addClickListener(buttonClickEvent ->
-        {
-            dialog.close();
-
-            Hero hero = new Hero(txtHeroName.getValue());
-            this.game = new Game(hero, new Story(new ArrayList<>()));
-
-            this.heroCommunicator = new HeroUiCommunicator(
-                    game, this.prbHealth, this.prbMana, this.spnInventory, this, gamePersistenceService
-            );
-
-            this.chatModel = aiService.createChatModel(true, this.heroCommunicator);
-
-            generateNewStoryPart(INITIAL_STORY_PROMPT.formatted(hero.getName()));
-        });
-        dialog.getFooter().add(saveButton);
-        dialog.open();
     }
 
     public void showGameOver(boolean fail) {
@@ -175,6 +144,7 @@ public class ChatView extends SplitLayout implements GameOverManager {
         UI current = UI.getCurrent();
         aiService.generateNewStoryPart(
                 this.chatModel,
+                this.game.getEntityId(),
                 textPrompt,
                 newText ->
                         current.access(
@@ -193,12 +163,16 @@ public class ChatView extends SplitLayout implements GameOverManager {
         generateFunctionCalls(finishedStory);
     }
 
+    private void handleFinishedAllAiActions() {
+        this.gamePersistenceService.saveGameAndEnsureGameId(this.game);
+    }
+
     private void generateFunctionCalls(String finishedStory) {
-        aiService.generateNewChatResponse(
-                aiService.createChatModel(false, this.heroCommunicator),
+        aiService.generateNewChatResponseWithoutMemory(
+                aiService.createChatModelWithTools(this.heroCommunicator),
                 Game.DEFAULT_TOOL_PROMPT.formatted(finishedStory),
-                responseWithTitle -> {
-                }
+                responseWithTitle -> handleFinishedAllAiActions()
+
         );
     }
 
@@ -206,18 +180,76 @@ public class ChatView extends SplitLayout implements GameOverManager {
         txtAsciiArt.clear();
 
         UI current = UI.getCurrent();
-        aiService.generateNewChatResponse(
-                aiService.createChatModel(false, null),
+        aiService.generateNewChatResponseWithoutMemory(
+                aiService.createChatModelWithoutMemory(),
                 EXTRACT_IMAGE_TITLE_PROMPT.formatted(finishedStory),
                 responseWithTitle -> {
                     current.access(() -> txtAsciiArt.setTitle(responseWithTitle));
-                    aiService.generateNewChatResponse(
-                            aiService.createChatModel(false, null),
+                    aiService.generateNewChatResponseWithoutMemory(
+                            aiService.createChatModelWithoutMemory(),
                             CREATE_ASCII_ART_PROMPT.formatted(responseWithTitle),
                             response -> current.access(() -> txtAsciiArt.setValue(response))
                     );
                 }
         );
+    }
+
+    @Override
+    public void setParameter(BeforeEvent event, @OptionalParameter String parameter) {
+        if (parameter != null && !parameter.isEmpty()) {
+            loadGame(parameter);
+        } else {
+            startNewGame();
+        }
+    }
+
+    private void loadGame(String gameId) {
+        Optional<Game> loadedGame = this.gamePersistenceService.loadGame(gameId);
+        if (loadedGame.isEmpty()) {
+            throw new IllegalStateException("Game with id " + gameId + " not found.");
+        }
+        this.game = loadedGame.get();
+        this.heroCommunicator = new HeroUiCommunicator(
+                game, this.prbHealth, this.prbMana, this.spnInventory, this
+        );
+
+        String lastStoryPart = this.game.getStory().storyParts().get(this.game.getStory().storyParts().size() - 1).text();
+        txtStory.setValue(lastStoryPart);
+        generateAsciiArt(lastStoryPart);
+
+        this.chatModel = aiService.createChatModelWithMemory();
+    }
+
+    private void startNewGame() {
+        Dialog dialog = new Dialog();
+        dialog.setCloseOnOutsideClick(false);
+        dialog.setCloseOnEsc(false);
+
+        dialog.setHeaderTitle("Input Hero name");
+
+        TextField txtHeroName = new TextField("Hero name");
+        txtHeroName.setValue("Hans");
+        dialog.add(txtHeroName);
+
+        Button saveButton = new Button("Ok");
+        saveButton.addClickListener(buttonClickEvent ->
+        {
+            dialog.close();
+
+            Hero hero = new Hero(txtHeroName.getValue());
+            this.game = new Game(hero, new Story(new ArrayList<>()));
+            this.gamePersistenceService.saveGameAndEnsureGameId(this.game);
+
+            this.heroCommunicator = new HeroUiCommunicator(
+                    game, this.prbHealth, this.prbMana, this.spnInventory, this
+            );
+
+            this.chatModel = aiService.createChatModelWithMemory();
+
+            generateNewStoryPart(INITIAL_STORY_PROMPT.formatted(hero.getName()));
+        });
+        dialog.getFooter().add(saveButton);
+        dialog.open();
     }
 
     record ProgressBarComponentPair(ProgressBar progressBar, Component component) {

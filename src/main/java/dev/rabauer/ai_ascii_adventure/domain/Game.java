@@ -65,10 +65,10 @@ public class Game {
               Story for the tool calling:
               %s              
             """;
-
     private final Hero hero;
     private final Story story;
-    private Object memoryId;
+    private Long entityId;
+    private String title;
 
     public Game(Hero hero, Story story) {
         this.hero = hero;
@@ -83,11 +83,19 @@ public class Game {
         return story;
     }
 
-    public Object getMemoryId() {
-        return memoryId;
+    public String getTitle() {
+        return title;
     }
 
-    public void setMemoryId(Object memoryId) {
-        this.memoryId = memoryId;
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public Long getEntityId() {
+        return entityId;
+    }
+
+    public void setEntityId(Long entityId) {
+        this.entityId = entityId;
     }
 }

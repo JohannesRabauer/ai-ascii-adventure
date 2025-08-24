@@ -9,7 +9,6 @@ import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
 import dev.langchain4j.service.tool.ToolExecutor;
 import dev.rabauer.ai_ascii_adventure.GameOverManager;
 import dev.rabauer.ai_ascii_adventure.domain.Game;
-import dev.rabauer.ai_ascii_adventure.persistence.GamePersistenceService;
 
 import java.util.HashMap;
 import java.util.List;
@@ -24,16 +23,14 @@ public class HeroUiCommunicator {
     private final ProgressBar prbMana;
     private final Span spnInventory;
     private final GameOverManager gameOverManager;
-    private final GamePersistenceService gamePersistenceService;
 
     public HeroUiCommunicator(Game game, ProgressBar prbHealth, ProgressBar prbMana, Span spnInventory,
-                              GameOverManager gameOverManager, GamePersistenceService gamePersistenceService) {
+                              GameOverManager gameOverManager) {
         this.game = game;
         this.prbHealth = prbHealth;
         this.prbMana = prbMana;
         this.spnInventory = spnInventory;
         this.gameOverManager = gameOverManager;
-        this.gamePersistenceService = gamePersistenceService;
     }
 
     public Map<ToolSpecification, ToolExecutor> getToolExecutors() {
@@ -214,10 +211,5 @@ public class HeroUiCommunicator {
                     this.gameOverManager.showGameOver(true)
             ));
         }
-    }
-
-    public void setMemoryId(Object memoryId) {
-        this.game.setMemoryId(memoryId);
-        this.gamePersistenceService.saveGame(this.game);
     }
 }

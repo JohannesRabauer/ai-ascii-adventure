@@ -22,7 +22,9 @@ public class GameMapper {
                 }).toList()
         );
         gameEntity.setHero(heroEntity);
-        gameEntity.setMemoryId(game.getMemoryId().toString());
+        if (game.getEntityId() != null) {
+            gameEntity.setId(game.getEntityId());
+        }
         return gameEntity;
     }
 
@@ -31,10 +33,12 @@ public class GameMapper {
         hero.setHealth(entity.getHero().getHealth());
         hero.setMana(entity.getHero().getMana());
         entity.getHero().getInventory().stream().map(InventoryItemEntity::getName).forEach(hero::addInventory);
-        return new Game(
+        Game game = new Game(
                 hero,
                 //TODO: load story from database
                 new Story(List.of())
         );
+        game.setEntityId(entity.getId());
+        return game;
     }
 }

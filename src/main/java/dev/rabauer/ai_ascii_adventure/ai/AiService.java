@@ -55,7 +55,7 @@ public class AiService {
         this.memoryStore = memoryStore;
     }
 
-    public Assistant createChatModel(boolean withMemory, HeroUiCommunicator tools) {
+    public AssistantWithMemory createChatModelWithMemory() {
 
         // Use OllamaStreamingChatModel for LangChain4J Ollama integration, with memory
         OllamaStreamingChatModel model = OllamaStreamingChatModel.builder()
@@ -64,40 +64,64 @@ public class AiService {
                 .think(false)
                 .timeout(Duration.ofMinutes(10))
                 .build();
-        AiServices<Assistant> streamingChatModel = AiServices
-                .builder(Assistant.class)
+        AiServices<AssistantWithMemory> streamingChatModel = AiServices
+                .builder(AssistantWithMemory.class)
                 .streamingChatModel(model);
 
-        if (tools != null) {
-            streamingChatModel.tools(tools.getToolExecutors());
-        }
-
-        if (withMemory) {
-            // Create a chat memory provider that uses the persistent store
-            ChatMemoryProvider chatMemoryProvider = memoryId ->
-            {
-                tools.setMemoryId(memoryId);
-                return MessageWindowChatMemory.builder()
+        // Create a chat memory provider that uses the persistent store
+        ChatMemoryProvider chatMemoryProvider = memoryId ->
+                MessageWindowChatMemory.builder()
                         .id(memoryId)
                         .maxMessages(20)
                         .chatMemoryStore(memoryStore)
                         .build();
-            };
 
-            streamingChatModel.chatMemoryProvider(chatMemoryProvider);
-        }
+        streamingChatModel.chatMemoryProvider(chatMemoryProvider);
 
         return streamingChatModel.build();
     }
 
-    public void generateNewStoryPart(Assistant chatModel, String textPrompt,
+    public AssistantWithoutMemory createChatModelWithoutMemory() {
+
+        // Use OllamaStreamingChatModel for LangChain4J Ollama integration, with memory
+        OllamaStreamingChatModel model = OllamaStreamingChatModel.builder()
+                .baseUrl(ollamaBaseUrl)
+                .modelName(ollamaModelName)
+                .think(false)
+                .timeout(Duration.ofMinutes(10))
+                .build();
+        AiServices<AssistantWithoutMemory> streamingChatModel = AiServices
+                .builder(AssistantWithoutMemory.class)
+                .streamingChatModel(model);
+
+        return streamingChatModel.build();
+    }
+
+    public AssistantWithoutMemory createChatModelWithTools(HeroUiCommunicator tools) {
+
+        // Use OllamaStreamingChatModel for LangChain4J Ollama integration, with memory
+        OllamaStreamingChatModel model = OllamaStreamingChatModel.builder()
+                .baseUrl(ollamaBaseUrl)
+                .modelName(ollamaModelName)
+                .think(false)
+                .timeout(Duration.ofMinutes(10))
+                .build();
+        AiServices<AssistantWithoutMemory> streamingChatModel = AiServices
+                .builder(AssistantWithoutMemory.class)
+                .streamingChatModel(model);
+        streamingChatModel.tools(tools.getToolExecutors());
+
+        return streamingChatModel.build();
+    }
+
+    public void generateNewStoryPart(AssistantWithMemory chatModel, long memoryId, String textPrompt,
                                      Consumer<String> onNext, Consumer<ChatResponse> onComplete) {
 
         ChatRequest request = ChatRequest.builder()
                 .messages(UserMessage.from(textPrompt))
                 .build();
         chatModel
-                .chat(request)
+                .chat(memoryId, request)
                 .onToolExecuted((ToolExecution toolExecution) ->
                         System.out.println(toolExecution)
                 )
@@ -107,8 +131,8 @@ public class AiService {
                 .start();
     }
 
-    public void generateNewChatResponse(Assistant chatModel, String textPrompt,
-                                        java.util.function.Consumer<String> onComplete) {
+    public void generateNewChatResponseWithoutMemory(AssistantWithoutMemory chatModel, String textPrompt,
+                                                     java.util.function.Consumer<String> onComplete) {
         chatModel
                 .chat(textPrompt)
                 .onPartialResponse(response -> {

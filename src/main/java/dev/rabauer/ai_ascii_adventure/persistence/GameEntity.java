@@ -17,7 +17,6 @@ public class GameEntity implements Serializable {
     @GeneratedValue(strategy = GenerationType.AUTO)
     long id;
 
-    private String memoryId;
     private HeroEntity hero;
 
     public GameEntity() {
@@ -37,13 +36,5 @@ public class GameEntity implements Serializable {
 
     public void setHero(HeroEntity hero) {
         this.hero = hero;
-    }
-
-    public String getMemoryId() {
-        return memoryId;
-    }
-
-    public void setMemoryId(String memoryId) {
-        this.memoryId = memoryId;
     }
 }
