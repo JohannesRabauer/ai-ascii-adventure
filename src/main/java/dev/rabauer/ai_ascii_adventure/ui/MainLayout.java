@@ -1,10 +1,13 @@
-package dev.rabauer.ai_ascii_adventure;
+package dev.rabauer.ai_ascii_adventure.ui;
 
+import com.vaadin.flow.component.ComponentUtil;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Nav;
 import com.vaadin.flow.component.orderedlayout.Scroller;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Layout;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.theme.lumo.LumoUtility;
@@ -30,22 +33,26 @@ public class MainLayout extends AppLayout {
 
         addToDrawer(scroller);
         addToNavbar(toggle, title);
+
+        ComponentUtil.addListener(UI.getCurrent(), GameChangeEvent.class, event -> {
+            scroller.setContent(getSideNav());
+        });
     }
 
     private Nav getSideNav() {
-        Nav sideNav = new Nav();
-        gamePersistenceService.loadGames().forEach(game -> {
-            sideNav.add(
+        VerticalLayout allLinks = new VerticalLayout();
+        gamePersistenceService.loadGamesWithoutStory().forEach(game -> {
+            allLinks.add(
                     new RouterLink(
                             game.getTitle(),
-                            ChatView.class,
+                            GameView.class,
                             game.getEntityId() + ""
                     )
             );
         });
 
-        sideNav.add(new RouterLink("New game...", ChatView.class));
+        allLinks.add(new RouterLink("New game...", GameView.class));
 
-        return sideNav;
+        return new Nav(allLinks);
     }
 }

@@ -30,16 +30,25 @@ public class AiService {
             %s
             """;
     public final static String EXTRACT_IMAGE_TITLE_PROMPT = """
-                Read the following text, extract its core meaning, and create a simple two word
-                title for an image that you would draw for this text
+                Task: Extract the core meaning of the following text and create a simple 3-word-title 
+                for an image that you would draw for this text.
             
-                Output: Only the two words for the title of an image.
+                Output: Only the 3 words for the title of an image. No formatting whatsoever! Just 3 words!
+            
+                Text:
+                %s
+            """;
+    public final static String EXTRACT_GAME_TITLE_PROMPT = """
+                Task: Extract the core meaning from the following text and create a simple
+                game title and make sure the heroes name is included.
+            
+                Output: A maximum of 5 words for the title of a game. No formatting whatsoever! Just 5 words!
             
                 Text:
                 %s
             """;
     public final static String CREATE_ASCII_ART_PROMPT = """
-                Input: You are given two words for a title of an image
+                Input: Title of an image
                 Output: Simple and recognizable ASCII art representation. Use minimal characters and clean lines.
                 IMPORTANT: Only return the ASCII art. No other text or description!
                 Task: Create a simple and recognizable ASCII art representation for the following title of the image

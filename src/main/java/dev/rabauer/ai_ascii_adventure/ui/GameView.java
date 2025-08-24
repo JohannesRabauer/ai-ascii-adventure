@@ -1,6 +1,7 @@
-package dev.rabauer.ai_ascii_adventure;
+package dev.rabauer.ai_ascii_adventure.ui;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -18,6 +19,7 @@ import com.vaadin.flow.router.BeforeEvent;
 import com.vaadin.flow.router.HasUrlParameter;
 import com.vaadin.flow.router.OptionalParameter;
 import com.vaadin.flow.router.Route;
+import dev.rabauer.ai_ascii_adventure.GameOverManager;
 import dev.rabauer.ai_ascii_adventure.ai.AiService;
 import dev.rabauer.ai_ascii_adventure.ai.AssistantWithMemory;
 import dev.rabauer.ai_ascii_adventure.ai.HeroUiCommunicator;
@@ -30,12 +32,11 @@ import dev.rabauer.ai_ascii_adventure.persistence.GamePersistenceService;
 import java.util.ArrayList;
 import java.util.Optional;
 
-import static dev.rabauer.ai_ascii_adventure.ai.AiService.CREATE_ASCII_ART_PROMPT;
-import static dev.rabauer.ai_ascii_adventure.ai.AiService.EXTRACT_IMAGE_TITLE_PROMPT;
+import static dev.rabauer.ai_ascii_adventure.ai.AiService.*;
 import static dev.rabauer.ai_ascii_adventure.domain.Game.INITIAL_STORY_PROMPT;
 
 @Route(value = "game", layout = MainLayout.class)
-public class ChatView extends SplitLayout implements GameOverManager, HasUrlParameter<String> {
+public class GameView extends SplitLayout implements GameOverManager, HasUrlParameter<String> {
     private final TextArea txtStory = new TextArea();
     private final TextArea txtAsciiArt = new TextArea();
     private final AiService aiService;
@@ -48,7 +49,7 @@ public class ChatView extends SplitLayout implements GameOverManager, HasUrlPara
     private Game game;
 
 
-    public ChatView(AiService aiService, GamePersistenceService gamePersistenceService) {
+    public GameView(AiService aiService, GamePersistenceService gamePersistenceService) {
         this.aiService = aiService;
         this.gamePersistenceService = gamePersistenceService;
 
@@ -159,12 +160,19 @@ public class ChatView extends SplitLayout implements GameOverManager, HasUrlPara
         StoryPart storyPart = new StoryPart(finishedStory);
         this.game.getStory().storyParts().add(storyPart);
 
+        //Is this the first part?
+        if (this.game.getStory().storyParts().size() == 1) {
+            generateGameTitle(finishedStory);
+        }
+
         generateAsciiArt(finishedStory);
         generateFunctionCalls(finishedStory);
     }
 
     private void handleFinishedAllAiActions() {
         this.gamePersistenceService.saveGameAndEnsureGameId(this.game);
+        ComponentUtil.fireEvent(UI.getCurrent(), new GameChangeEvent(this, false));
+
     }
 
     private void generateFunctionCalls(String finishedStory) {
@@ -172,7 +180,6 @@ public class ChatView extends SplitLayout implements GameOverManager, HasUrlPara
                 aiService.createChatModelWithTools(this.heroCommunicator),
                 Game.DEFAULT_TOOL_PROMPT.formatted(finishedStory),
                 responseWithTitle -> handleFinishedAllAiActions()
-
         );
     }
 
@@ -190,6 +197,19 @@ public class ChatView extends SplitLayout implements GameOverManager, HasUrlPara
                             CREATE_ASCII_ART_PROMPT.formatted(responseWithTitle),
                             response -> current.access(() -> txtAsciiArt.setValue(response))
                     );
+                }
+        );
+    }
+
+    private void generateGameTitle(String firstStoryPart) {
+        aiService.generateNewChatResponseWithoutMemory(
+                aiService.createChatModelWithoutMemory(),
+                EXTRACT_GAME_TITLE_PROMPT.formatted(firstStoryPart),
+                responseWithTitle ->
+                {
+                    this.game.setTitle(responseWithTitle);
+                    this.gamePersistenceService.saveGameAndEnsureGameId(this.game);
+                    ComponentUtil.fireEvent(UI.getCurrent(), new GameChangeEvent(this, false));
                 }
         );
     }

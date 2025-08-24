@@ -1,4 +1,4 @@
-package dev.rabauer.ai_ascii_adventure;
+package dev.rabauer.ai_ascii_adventure.ui;
 
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
