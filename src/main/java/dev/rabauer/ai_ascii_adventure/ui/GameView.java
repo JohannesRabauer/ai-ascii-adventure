@@ -1,5 +1,9 @@
 package dev.rabauer.ai_ascii_adventure.ui;
 
+import com.google.adk.agents.RunConfig;
+import com.google.adk.runner.InMemoryRunner;
+import com.google.adk.sessions.Session;
+import com.google.genai.types.Part;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.Key;
@@ -143,17 +147,34 @@ public class GameView extends SplitLayout implements GameOverManager, HasUrlPara
         this.txtStory.clear();
 
         UI current = UI.getCurrent();
-        aiService.generateNewStoryPart(
-                this.chatModel,
-                this.game.getEntityId(),
-                textPrompt,
-                newText ->
-                        current.access(
-                                () ->
-                                        txtStory.setValue(txtStory.getValue() + newText)
-                        ),
-                completeResponse -> current.access(() -> handleFinishedStoryPart(completeResponse.aiMessage().text()))
-        );
+        LlmAgents relevantAgents = aiService.createRelevantAgents();
+
+        RunConfig runConfig = RunConfig.builder().build();
+        InMemoryRunner runner = new InMemoryRunner(relevantAgents.refinementLoop());
+
+
+        Session session =
+                runner
+                        .sessionService()
+                        .createSession("AIAdventure", "1")
+                        .blockingGet();
+
+        runner.runAsync(session, com.google.genai.types.Content.fromParts(Part.fromText("Let's go!")), runConfig).blockingForEach(event -> {
+            if (event.finalResponse()) {
+                current.access(() -> txtStory.setValue(txtStory.getValue() + event.stringifyContent()));
+            }
+        });
+//        aiService.generateNewStoryPart(
+//                this.chatModel,
+//                this.game.getEntityId(),
+//                textPrompt,
+//                newText ->
+//                        current.access(
+//                                () ->
+//                                        txtStory.setValue(txtStory.getValue() + newText)
+//                        ),
+//                completeResponse -> current.access(() -> handleFinishedStoryPart(completeResponse.aiMessage().text()))
+//        );
     }
 
     private void handleFinishedStoryPart(String finishedStory) {

@@ -11,7 +11,6 @@ public class Game {
                   - Each turn, describe:
                       * The current location and atmosphere
                       * Any characters, enemies, items, or mysteries present
-                      * IMPORTANT: Present 2–4 clear choices for the player, labelled 1 through 4
                   - Example actions for the player:
                       * "Attack the goblin"
                       * "Search the chest"
@@ -28,7 +27,6 @@ public class Game {
             
                Output format:
                     - Don't use any Markdown for the text or similar formatting. Just plain text with line breaks and paragraphs.
-                    - Most important! The "choices" field contains a maximum of 4 options, labeled as string keys "1" through "4".
             
                    Begin the story with an already escalated situation where the hero is facing an epic fiend. The stakes are high,
                    and the hero must make a quick decision to survive. Describe the scene vividly, including the environment,
@@ -37,9 +35,12 @@ public class Game {
                    The hero's name is %s.
             """;
 
-
-    public static final String INITIAL_TOOL_PROMPT = """
-            Initialize the Hero with full health and mana.
+    public static final String DEFAULT_CHOICES_PROMPT = """
+            You are a an assistant that only gives the player four choices. 
+            These choices are according to the story_agents told story. They must make sense.
+            Most important! There must be a maximum of 4 options, labeled as string keys "1" through "4".
+            Don't use any Markdown for the text or similar formatting. Just plain text with line breaks and paragraphs.
+            The adventure should be completed after approximately 10 turns, though it can be shorter or longer depending on the path taken.
             """;
 
 

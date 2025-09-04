@@ -1,10 +1,14 @@
 package dev.rabauer.ai_ascii_adventure.ai;
 
+import com.google.adk.agents.LlmAgent;
+import com.google.adk.agents.LoopAgent;
+import com.google.adk.models.langchain4j.LangChain4j;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.memory.chat.ChatMemoryProvider;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.tool.ToolExecution;
@@ -14,6 +18,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.util.function.Consumer;
+
+import static dev.rabauer.ai_ascii_adventure.domain.Game.*;
 
 @Service
 public class AiService {
@@ -123,6 +129,44 @@ public class AiService {
         return streamingChatModel.build();
     }
 
+    public LlmAgents createRelevantAgents() {
+        OllamaChatModel model = OllamaChatModel.builder()
+                .baseUrl(ollamaBaseUrl)
+                .modelName(ollamaModelName)
+                .think(false)
+                .timeout(Duration.ofMinutes(10))
+                .build();
+
+        LlmAgent storyAgent = LlmAgent.builder()
+                .name("story_agent")
+                .description("An assistant that tells the story.")
+                .model(new LangChain4j(model))
+                .instruction(INITIAL_STORY_PROMPT)
+                .build();
+
+        LlmAgent toolAgent = LlmAgent.builder()
+                .name("tool_agent")
+                .description("An assistant that can call tools in java to set some things for the player object on the ui.")
+                .model(new LangChain4j(model))
+                .instruction(DEFAULT_TOOL_PROMPT)
+                .build();
+
+        LlmAgent choicesAgent = LlmAgent.builder()
+                .name("choices_agent")
+                .description("An assistant that gives choices for the progress of the story.")
+                .model(new LangChain4j(model))
+                .instruction(DEFAULT_CHOICES_PROMPT)
+                .build();
+
+        LoopAgent refinementLoop = LoopAgent.builder()
+                .name("CodeRefinementLoop")
+                .maxIterations(5)
+                .subAgents(storyAgent, choicesAgent)
+                .build();
+
+        return new LlmAgents(storyAgent, toolAgent, choicesAgent, refinementLoop);
+    }
+
     public void generateNewStoryPart(AssistantWithMemory chatModel, long memoryId, String textPrompt,
                                      Consumer<String> onNext, Consumer<ChatResponse> onComplete) {
 
@@ -152,5 +196,13 @@ public class AiService {
                 })
                 .onError(null)
                 .start();
+    }
+
+    public record LlmAgents(
+            LlmAgent storyAgent,
+            LlmAgent toolAgent,
+            LlmAgent choicesAgent,
+            LoopAgent refinementLoop
+    ) {
     }
 }
