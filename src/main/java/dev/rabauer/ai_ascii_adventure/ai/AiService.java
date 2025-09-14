@@ -1,8 +1,7 @@
 package dev.rabauer.ai_ascii_adventure.ai;
 
-import com.google.adk.agents.LlmAgent;
-import com.google.adk.agents.LoopAgent;
-import com.google.adk.models.langchain4j.LangChain4j;
+import dev.langchain4j.agentic.AgenticServices;
+import dev.langchain4j.agentic.UntypedAgent;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.memory.chat.ChatMemoryProvider;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
@@ -13,13 +12,13 @@ import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.tool.ToolExecution;
 import dev.langchain4j.store.memory.chat.ChatMemoryStore;
+import dev.rabauer.ai_ascii_adventure.ai.agent.ChoicesAgent;
+import dev.rabauer.ai_ascii_adventure.ai.agent.StoryAgent;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.util.function.Consumer;
-
-import static dev.rabauer.ai_ascii_adventure.domain.Game.*;
 
 @Service
 public class AiService {
@@ -129,7 +128,7 @@ public class AiService {
         return streamingChatModel.build();
     }
 
-    public LlmAgents createRelevantAgents() {
+    public UntypedAgent createDungeonMaster() {
         OllamaChatModel model = OllamaChatModel.builder()
                 .baseUrl(ollamaBaseUrl)
                 .modelName(ollamaModelName)
@@ -137,34 +136,32 @@ public class AiService {
                 .timeout(Duration.ofMinutes(10))
                 .build();
 
-        LlmAgent storyAgent = LlmAgent.builder()
-                .name("story_agent")
-                .description("An assistant that tells the story.")
-                .model(new LangChain4j(model))
-                .instruction(INITIAL_STORY_PROMPT)
+        // Create a chat memory provider that uses the persistent store
+        ChatMemoryProvider chatMemoryProvider = memoryId ->
+                MessageWindowChatMemory.builder()
+                        .id(memoryId)
+                        .maxMessages(20)
+                        .chatMemoryStore(memoryStore)
+                        .build();
+
+        StoryAgent storyAgent = AgenticServices
+                .agentBuilder(StoryAgent.class)
+                .chatMemoryProvider(chatMemoryProvider)
+                .chatModel(model)
+                .outputName("currentStory")
                 .build();
 
-        LlmAgent toolAgent = LlmAgent.builder()
-                .name("tool_agent")
-                .description("An assistant that can call tools in java to set some things for the player object on the ui.")
-                .model(new LangChain4j(model))
-                .instruction(DEFAULT_TOOL_PROMPT)
+        ChoicesAgent choicesAgent = AgenticServices
+                .agentBuilder(ChoicesAgent.class)
+                .chatModel(model)
+                .outputName("fullStory")
                 .build();
 
-        LlmAgent choicesAgent = LlmAgent.builder()
-                .name("choices_agent")
-                .description("An assistant that gives choices for the progress of the story.")
-                .model(new LangChain4j(model))
-                .instruction(DEFAULT_CHOICES_PROMPT)
-                .build();
-
-        LoopAgent refinementLoop = LoopAgent.builder()
-                .name("CodeRefinementLoop")
-                .maxIterations(5)
+        return AgenticServices
+                .sequenceBuilder()
                 .subAgents(storyAgent, choicesAgent)
+                .outputName("fullStory")
                 .build();
-
-        return new LlmAgents(storyAgent, toolAgent, choicesAgent, refinementLoop);
     }
 
     public void generateNewStoryPart(AssistantWithMemory chatModel, long memoryId, String textPrompt,
@@ -196,13 +193,5 @@ public class AiService {
                 })
                 .onError(null)
                 .start();
-    }
-
-    public record LlmAgents(
-            LlmAgent storyAgent,
-            LlmAgent toolAgent,
-            LlmAgent choicesAgent,
-            LoopAgent refinementLoop
-    ) {
     }
 }
