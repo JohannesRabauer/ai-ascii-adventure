@@ -20,7 +20,6 @@ import com.vaadin.flow.router.BeforeEvent;
 import com.vaadin.flow.router.HasUrlParameter;
 import com.vaadin.flow.router.OptionalParameter;
 import com.vaadin.flow.router.Route;
-import dev.langchain4j.agentic.UntypedAgent;
 import dev.rabauer.ai_ascii_adventure.GameOverManager;
 import dev.rabauer.ai_ascii_adventure.ai.AiService;
 import dev.rabauer.ai_ascii_adventure.ai.AssistantWithMemory;
@@ -32,7 +31,6 @@ import dev.rabauer.ai_ascii_adventure.domain.StoryPart;
 import dev.rabauer.ai_ascii_adventure.persistence.GamePersistenceService;
 
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.Optional;
 
 import static dev.rabauer.ai_ascii_adventure.ai.AiService.*;
@@ -138,47 +136,20 @@ public class GameView extends SplitLayout implements GameOverManager, HasUrlPara
     private void generateNewStoryFromChoice(NumberField numInput) {
         Double value = numInput.getValue();
         if (value != null && value >= 1 && value <= 4) {
-            generateNewStoryPart(this.game.getEntityId(), this.game.getHero().getName(), String.valueOf(value.intValue()));
+            handleFinishedStoryPart(
+                    this.aiService.generateNewStoryPart(
+                            this.game.getEntityId(),
+                            this.game.getHero().getName(),
+                            String.valueOf(value.intValue()
+                            )
+                    )
+            );
         }
     }
 
-    private void generateNewStoryPart(Long gameId, String heroName) {
-        generateNewStoryPart(
-                Map.of(
-                        "memoryId", gameId,
-                        "heroName", heroName,
-                        "choice", ""
-                )
-        );
-    }
-
-    private void generateNewStoryPart(Long gameId, String heroName, String choice) {
-        generateNewStoryPart(
-                Map.of(
-                        "memoryId", gameId,
-                        "heroName", heroName,
-                        "choice", choice
-                )
-        );
-    }
-
-    private void generateNewStoryPart(Map<String, Object> input) {
-        this.txtStory.clear();
-
-        UI current = UI.getCurrent();
-        UntypedAgent dungeonMaster = aiService.createDungeonMaster();
-
-        String story = (String) dungeonMaster.invoke(input);
-
-        current.access(
-                () ->
-                {
-                    txtStory.setValue(story);
-                    handleFinishedStoryPart(story);
-                });
-    }
-
     private void handleFinishedStoryPart(String finishedStory) {
+        UI.getCurrent().access(() -> txtStory.setValue(finishedStory));
+
         StoryPart storyPart = new StoryPart(finishedStory);
         this.game.getStory().storyParts().add(storyPart);
 
@@ -288,7 +259,12 @@ public class GameView extends SplitLayout implements GameOverManager, HasUrlPara
 
             this.chatModel = aiService.createChatModelWithMemory();
 
-            generateNewStoryPart(this.game.getEntityId(), hero.getName());
+            handleFinishedStoryPart(
+                    this.aiService.generateFirstStoryPart(
+                            this.game.getEntityId(),
+                            hero.getName()
+                    )
+            );
         });
         dialog.getFooter().add(saveButton);
         dialog.open();

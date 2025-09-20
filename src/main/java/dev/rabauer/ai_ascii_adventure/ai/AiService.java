@@ -2,6 +2,7 @@ package dev.rabauer.ai_ascii_adventure.ai;
 
 import dev.langchain4j.agentic.AgenticServices;
 import dev.langchain4j.agentic.UntypedAgent;
+import dev.langchain4j.agentic.scope.AgenticScopePersister;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.memory.chat.ChatMemoryProvider;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
@@ -18,6 +19,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.util.Map;
 import java.util.function.Consumer;
 
 @Service
@@ -163,6 +165,33 @@ public class AiService {
                 .subAgents(storyAgent, choicesAgent)
                 .outputName("fullStory")
                 .build();
+    }
+
+
+    public String generateFirstStoryPart(Long gameId, String heroName) {
+        return generateNewStoryPart(
+                Map.of(
+                        "memoryId", gameId,
+                        "heroName", heroName,
+                        "choice", ""
+                )
+        );
+    }
+
+    public String generateNewStoryPart(Long gameId, String heroName, String choice) {
+        return generateNewStoryPart(
+                Map.of(
+                        "memoryId", gameId,
+                        "heroName", heroName,
+                        "choice", choice
+                )
+        );
+    }
+
+    public String generateNewStoryPart(Map<String, Object> input) {
+        UntypedAgent dungeonMaster = createDungeonMaster();
+
+        String story = (String) dungeonMaster.invoke(input);
     }
 
     public void generateNewStoryPart(AssistantWithMemory chatModel, long memoryId, String textPrompt,
