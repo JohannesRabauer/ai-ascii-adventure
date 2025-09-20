@@ -1,6 +1,7 @@
 package dev.rabauer.ai_ascii_adventure.ai.agent;
 
 import dev.langchain4j.agentic.Agent;
+import dev.langchain4j.service.MemoryId;
 import dev.langchain4j.service.UserMessage;
 import dev.langchain4j.service.V;
 
@@ -34,5 +35,5 @@ public interface StoryAgent {
                    The hero's name is {{heroName}}.
             """)
     @Agent("A story teller")
-    String startTheStory(@V("heroName") String heroName, @V("choice") String choice);
+    String startTheStory(@MemoryId @V("memoryId") String memoryId, @V("heroName") String heroName, @V("choice") String choice);
 }

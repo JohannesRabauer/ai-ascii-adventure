@@ -138,22 +138,24 @@ public class GameView extends SplitLayout implements GameOverManager, HasUrlPara
     private void generateNewStoryFromChoice(NumberField numInput) {
         Double value = numInput.getValue();
         if (value != null && value >= 1 && value <= 4) {
-            generateNewStoryPart(this.game.getHero().getName(), String.valueOf(value.intValue()));
+            generateNewStoryPart(this.game.getEntityId(), this.game.getHero().getName(), String.valueOf(value.intValue()));
         }
     }
 
-    private void generateNewStoryPart(String heroName) {
+    private void generateNewStoryPart(Long gameId, String heroName) {
         generateNewStoryPart(
                 Map.of(
+                        "memoryId", gameId,
                         "heroName", heroName,
                         "choice", ""
                 )
         );
     }
 
-    private void generateNewStoryPart(String heroName, String choice) {
+    private void generateNewStoryPart(Long gameId, String heroName, String choice) {
         generateNewStoryPart(
                 Map.of(
+                        "memoryId", gameId,
                         "heroName", heroName,
                         "choice", choice
                 )
@@ -286,7 +288,7 @@ public class GameView extends SplitLayout implements GameOverManager, HasUrlPara
 
             this.chatModel = aiService.createChatModelWithMemory();
 
-            generateNewStoryPart(hero.getName());
+            generateNewStoryPart(this.game.getEntityId(), hero.getName());
         });
         dialog.getFooter().add(saveButton);
         dialog.open();
