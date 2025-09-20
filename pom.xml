@@ -31,7 +31,7 @@
         <maven.compiler.release>${java.version}</maven.compiler.release>
         <spring-ai.version>1.1.0-SNAPSHOT</spring-ai.version>
         <vaadin.version>24.8.2</vaadin.version>
-        <langchain4j.version>1.4.0</langchain4j.version>
+        <langchain4j.version>1.5.0</langchain4j.version>
     </properties>
 
     <repositories>
@@ -87,7 +87,7 @@
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-agentic</artifactId>
-            <version>1.4.0-beta10</version>
+            <version>1.5.0-beta11</version>
         </dependency>
 
         <dependency>
