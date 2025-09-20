@@ -189,9 +189,7 @@ public class AiService {
     }
 
     public String generateNewStoryPart(Map<String, Object> input) {
-        UntypedAgent dungeonMaster = createDungeonMaster();
-
-        String story = (String) dungeonMaster.invoke(input);
+        return (String) createDungeonMaster().invoke(input);
     }
 
     public void generateNewStoryPart(AssistantWithMemory chatModel, long memoryId, String textPrompt,
