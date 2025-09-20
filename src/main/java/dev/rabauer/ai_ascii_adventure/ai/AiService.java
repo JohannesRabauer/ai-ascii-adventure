@@ -1,14 +1,19 @@
 package dev.rabauer.ai_ascii_adventure.ai;
 
+import dev.langchain4j.agentic.AgenticServices;
+import dev.langchain4j.agentic.UntypedAgent;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.memory.chat.ChatMemoryProvider;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.tool.ToolExecution;
 import dev.langchain4j.store.memory.chat.ChatMemoryStore;
+import dev.rabauer.ai_ascii_adventure.ai.agent.ChoicesAgent;
+import dev.rabauer.ai_ascii_adventure.ai.agent.StoryAgent;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -121,6 +126,43 @@ public class AiService {
         streamingChatModel.tools(tools.getToolExecutors());
 
         return streamingChatModel.build();
+    }
+
+    public UntypedAgent createDungeonMaster() {
+        OllamaChatModel model = OllamaChatModel.builder()
+                .baseUrl(ollamaBaseUrl)
+                .modelName(ollamaModelName)
+                .think(false)
+                .timeout(Duration.ofMinutes(10))
+                .build();
+
+        // Create a chat memory provider that uses the persistent store
+        ChatMemoryProvider chatMemoryProvider = memoryId ->
+                MessageWindowChatMemory.builder()
+                        .id(memoryId)
+                        .maxMessages(20)
+                        .chatMemoryStore(memoryStore)
+                        .build();
+
+        StoryAgent storyAgent = AgenticServices
+                .agentBuilder(StoryAgent.class)
+                .chatMemoryProvider(chatMemoryProvider)
+                .chatModel(model)
+                .outputName("currentStory")
+                .build();
+
+        ChoicesAgent choicesAgent = AgenticServices
+                .agentBuilder(ChoicesAgent.class)
+                .chatModel(model)
+                .chatMemoryProvider(chatMemoryProvider)
+                .outputName("fullStory")
+                .build();
+
+        return AgenticServices
+                .sequenceBuilder()
+                .subAgents(storyAgent, choicesAgent)
+                .outputName("fullStory")
+                .build();
     }
 
     public void generateNewStoryPart(AssistantWithMemory chatModel, long memoryId, String textPrompt,

@@ -12,6 +12,7 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
+import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.value.ValueChangeMode;
@@ -19,6 +20,7 @@ import com.vaadin.flow.router.BeforeEvent;
 import com.vaadin.flow.router.HasUrlParameter;
 import com.vaadin.flow.router.OptionalParameter;
 import com.vaadin.flow.router.Route;
+import dev.langchain4j.agentic.UntypedAgent;
 import dev.rabauer.ai_ascii_adventure.GameOverManager;
 import dev.rabauer.ai_ascii_adventure.ai.AiService;
 import dev.rabauer.ai_ascii_adventure.ai.AssistantWithMemory;
@@ -30,10 +32,10 @@ import dev.rabauer.ai_ascii_adventure.domain.StoryPart;
 import dev.rabauer.ai_ascii_adventure.persistence.GamePersistenceService;
 
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.Optional;
 
 import static dev.rabauer.ai_ascii_adventure.ai.AiService.*;
-import static dev.rabauer.ai_ascii_adventure.domain.Game.INITIAL_STORY_PROMPT;
 
 @Route(value = "game", layout = MainLayout.class)
 public class GameView extends SplitLayout implements GameOverManager, HasUrlParameter<String> {
@@ -121,39 +123,59 @@ public class GameView extends SplitLayout implements GameOverManager, HasUrlPara
         numInput.setMax(4);
         numInput.setStep(1);
         numInput.setWidth("100px");
-        numInput.addKeyDownListener(Key.ENTER, event -> {
-            Double value = numInput.getValue();
-            if (value != null && value >= 1 && value <= 4) {
-                generateNewStoryPart(String.valueOf(value.intValue()));
-            }
-        });
+        numInput.addKeyDownListener(Key.ENTER, event ->
+                generateNewStoryFromChoice(numInput)
+        );
         Button btnSendPrompt = new Button("Send");
-        btnSendPrompt.addClickListener(k -> {
-            Double value = numInput.getValue();
-            if (value != null && value >= 1 && value <= 4) {
-                generateNewStoryPart(String.valueOf(value.intValue()));
-            }
-        });
+        btnSendPrompt.addClickListener(k ->
+                generateNewStoryFromChoice(numInput)
+        );
         HorizontalLayout hlUserInput = new HorizontalLayout(numInput, btnSendPrompt);
 
         return new VerticalLayout(txtStory, hlUserInput);
     }
 
-    private void generateNewStoryPart(String textPrompt) {
+    private void generateNewStoryFromChoice(NumberField numInput) {
+        Double value = numInput.getValue();
+        if (value != null && value >= 1 && value <= 4) {
+            generateNewStoryPart(this.game.getEntityId(), this.game.getHero().getName(), String.valueOf(value.intValue()));
+        }
+    }
+
+    private void generateNewStoryPart(Long gameId, String heroName) {
+        generateNewStoryPart(
+                Map.of(
+                        "memoryId", gameId,
+                        "heroName", heroName,
+                        "choice", ""
+                )
+        );
+    }
+
+    private void generateNewStoryPart(Long gameId, String heroName, String choice) {
+        generateNewStoryPart(
+                Map.of(
+                        "memoryId", gameId,
+                        "heroName", heroName,
+                        "choice", choice
+                )
+        );
+    }
+
+    private void generateNewStoryPart(Map<String, Object> input) {
         this.txtStory.clear();
 
         UI current = UI.getCurrent();
-        aiService.generateNewStoryPart(
-                this.chatModel,
-                this.game.getEntityId(),
-                textPrompt,
-                newText ->
-                        current.access(
-                                () ->
-                                        txtStory.setValue(txtStory.getValue() + newText)
-                        ),
-                completeResponse -> current.access(() -> handleFinishedStoryPart(completeResponse.aiMessage().text()))
-        );
+        UntypedAgent dungeonMaster = aiService.createDungeonMaster();
+
+        String story = (String) dungeonMaster.invoke(input);
+
+        current.access(
+                () ->
+                {
+                    txtStory.setValue(story);
+                    handleFinishedStoryPart(story);
+                });
     }
 
     private void handleFinishedStoryPart(String finishedStory) {
@@ -266,7 +288,7 @@ public class GameView extends SplitLayout implements GameOverManager, HasUrlPara
 
             this.chatModel = aiService.createChatModelWithMemory();
 
-            generateNewStoryPart(INITIAL_STORY_PROMPT.formatted(hero.getName()));
+            generateNewStoryPart(this.game.getEntityId(), hero.getName());
         });
         dialog.getFooter().add(saveButton);
         dialog.open();
