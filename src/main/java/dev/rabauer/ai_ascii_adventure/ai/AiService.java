@@ -156,7 +156,6 @@ public class AiService {
         ChoicesAgent choicesAgent = AgenticServices
                 .agentBuilder(ChoicesAgent.class)
                 .chatModel(model)
-                .chatMemoryProvider(chatMemoryProvider)
                 .outputName("fullStory")
                 .build();
 

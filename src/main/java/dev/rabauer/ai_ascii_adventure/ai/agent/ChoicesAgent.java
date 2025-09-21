@@ -1,7 +1,6 @@
 package dev.rabauer.ai_ascii_adventure.ai.agent;
 
 import dev.langchain4j.agentic.Agent;
-import dev.langchain4j.service.MemoryId;
 import dev.langchain4j.service.UserMessage;
 import dev.langchain4j.service.V;
 
@@ -25,5 +24,5 @@ public interface ChoicesAgent {
             {{currentStory}}     
             """)
     @Agent("A servant of the story teller that adds useful, fun, cool choices to a given story.")
-    String giveMeChoices(@MemoryId @V("memoryId") String memoryId, @V("currentStory") String currentStory);
+    String giveMeChoices(@V("currentStory") String currentStory);
 }

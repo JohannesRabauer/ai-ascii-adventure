@@ -35,5 +35,5 @@ public interface StoryAgent {
                    The hero's name is {{heroName}}.
             """)
     @Agent("A story teller")
-    String startTheStory(@MemoryId @V("memoryId") String memoryId, @V("heroName") String heroName, @V("choice") String choice);
+    String startTheStory(@MemoryId String memoryId, @V("heroName") String heroName, @V("choice") String choice);
 }
